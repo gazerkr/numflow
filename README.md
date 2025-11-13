@@ -546,6 +546,14 @@ MIT License
 
 ---
 
+## Acknowledgements
+
+Special thanks to my wife Carol for her unwavering support and encouragement throughout this project.
+
+I am also grateful to my family for their patience and understanding during the development of this framework.
+
+---
+
 ## References
 
 This project was inspired by ideas from the following projects:
