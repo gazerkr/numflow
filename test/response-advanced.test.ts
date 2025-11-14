@@ -426,7 +426,7 @@ describe('Response Advanced Features', () => {
       })
     })
 
-    it('should URL encode Korean filename', (done) => {
+    it('should properly encode Korean filename (RFC 6266 + RFC 5987)', (done) => {
       app = numflow()
       const port = 10013
 
@@ -437,8 +437,61 @@ describe('Response Advanced Features', () => {
       server = app.listen(port, () => {
         http.get(`http://localhost:${port}/download`, (res) => {
           const disposition = res.headers['content-disposition'] as string
+
+          // RFC 6266: Must contain "attachment"
           expect(disposition).toContain('attachment')
-          expect(disposition).toContain(encodeURIComponent('테스트파일.txt'))
+
+          // RFC 6266: ASCII fallback for old browsers - filename="???.txt"
+          expect(disposition).toMatch(/filename="[^"]*\.txt"/)
+
+          // RFC 5987: UTF-8 encoded filename - filename*=UTF-8''%ED%85%8C...
+          expect(disposition).toContain('filename*=UTF-8\'\'')
+          expect(disposition).toContain('%ED%85%8C%EC%8A%A4%ED%8A%B8') // "테스트" encoded
+
+          done()
+        })
+      })
+    })
+
+    it('should properly encode Japanese filename (RFC 6266 + RFC 5987)', (done) => {
+      app = numflow()
+      const port = 10014
+
+      app.get('/download', (_req, res) => {
+        res.download(testTextFile, 'ファイル.txt')
+      })
+
+      server = app.listen(port, () => {
+        http.get(`http://localhost:${port}/download`, (res) => {
+          const disposition = res.headers['content-disposition'] as string
+
+          expect(disposition).toContain('attachment')
+          expect(disposition).toContain('filename*=UTF-8\'\'')
+          expect(disposition).toContain('%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB') // "ファイル" encoded
+
+          done()
+        })
+      })
+    })
+
+    it('should handle ASCII filename without RFC 5987 encoding', (done) => {
+      app = numflow()
+      const port = 10015
+
+      app.get('/download', (_req, res) => {
+        res.download(testTextFile, 'simple-file.txt')
+      })
+
+      server = app.listen(port, () => {
+        http.get(`http://localhost:${port}/download`, (res) => {
+          const disposition = res.headers['content-disposition'] as string
+
+          // ASCII only - simple format
+          expect(disposition).toBe('attachment; filename="simple-file.txt"')
+
+          // Should NOT have filename* for ASCII-only
+          expect(disposition).not.toContain('filename*=')
+
           done()
         })
       })
@@ -622,6 +675,204 @@ describe('Response Advanced Features', () => {
               done()
             }
           })
+        })
+      })
+    })
+  })
+
+  describe('res.status()', () => {
+    it('should set valid status code 200', (done) => {
+      app = numflow()
+      const port = 20000
+
+      app.get('/test', (_req, res) => {
+        res.status(200).send('OK')
+      })
+
+      server = app.listen(port, () => {
+        http.get(`http://localhost:${port}/test`, (res) => {
+          expect(res.statusCode).toBe(200)
+          let data = ''
+          res.on('data', (chunk) => { data += chunk })
+          res.on('end', () => {
+            expect(data).toBe('OK')
+            done()
+          })
+        })
+      })
+    })
+
+    it('should allow method chaining with res.json()', (done) => {
+      app = numflow()
+      const port = 20001
+
+      app.post('/users', (_req, res) => {
+        res.status(201).json({ created: true })
+      })
+
+      server = app.listen(port, () => {
+        const req = http.request({
+          hostname: 'localhost',
+          port,
+          path: '/users',
+          method: 'POST'
+        }, (res) => {
+          expect(res.statusCode).toBe(201)
+          let data = ''
+          res.on('data', (chunk) => { data += chunk })
+          res.on('end', () => {
+            expect(JSON.parse(data)).toEqual({ created: true })
+            done()
+          })
+        })
+        req.end()
+      })
+    })
+
+    it('should work with res.send()', (done) => {
+      app = numflow()
+      const port = 20002
+
+      app.get('/error', (_req, res) => {
+        res.status(404).send('Not Found')
+      })
+
+      server = app.listen(port, () => {
+        http.get(`http://localhost:${port}/error`, (res) => {
+          expect(res.statusCode).toBe(404)
+          let data = ''
+          res.on('data', (chunk) => { data += chunk })
+          res.on('end', () => {
+            expect(data).toBe('Not Found')
+            done()
+          })
+        })
+      })
+    })
+
+    it('should support 201 Created status code', (done) => {
+      app = numflow()
+      const port = 20003
+
+      app.post('/api', (_req, res) => {
+        res.status(201).json({ id: 123 })
+      })
+
+      server = app.listen(port, () => {
+        const req = http.request({
+          hostname: 'localhost',
+          port,
+          path: '/api',
+          method: 'POST'
+        }, (res) => {
+          expect(res.statusCode).toBe(201)
+          done()
+        })
+        req.end()
+      })
+    })
+
+    it('should support 500 Internal Server Error', (done) => {
+      app = numflow()
+      const port = 20004
+
+      app.get('/error', (_req, res) => {
+        res.status(500).send('Server Error')
+      })
+
+      server = app.listen(port, () => {
+        http.get(`http://localhost:${port}/error`, (res) => {
+          expect(res.statusCode).toBe(500)
+          done()
+        })
+      })
+    })
+
+    // RFC 7231 validation tests (Express.js 5.x compatible)
+    it('should reject invalid status code 978', (done) => {
+      app = numflow()
+      const port = 20005
+
+      app.get('/test', (_req, res) => {
+        try {
+          res.status(978).send('Invalid')
+          done(new Error('Should have thrown'))
+        } catch (err: any) {
+          expect(err.message).toBe('Invalid status code: 978')
+          res.status(500).send('Error caught')
+        }
+      })
+
+      server = app.listen(port, () => {
+        http.get(`http://localhost:${port}/test`, (res) => {
+          expect(res.statusCode).toBe(500)
+          done()
+        })
+      })
+    })
+
+    it('should reject status code below 100', (done) => {
+      app = numflow()
+      const port = 20006
+
+      app.get('/test', (_req, res) => {
+        try {
+          res.status(99).send('Invalid')
+          done(new Error('Should have thrown'))
+        } catch (err: any) {
+          expect(err.message).toBe('Invalid status code: 99')
+          res.status(500).send('Error caught')
+        }
+      })
+
+      server = app.listen(port, () => {
+        http.get(`http://localhost:${port}/test`, (res) => {
+          expect(res.statusCode).toBe(500)
+          done()
+        })
+      })
+    })
+
+    it('should reject status code above 599', (done) => {
+      app = numflow()
+      const port = 20007
+
+      app.get('/test', (_req, res) => {
+        try {
+          res.status(600).send('Invalid')
+          done(new Error('Should have thrown'))
+        } catch (err: any) {
+          expect(err.message).toBe('Invalid status code: 600')
+          res.status(500).send('Error caught')
+        }
+      })
+
+      server = app.listen(port, () => {
+        http.get(`http://localhost:${port}/test`, (res) => {
+          expect(res.statusCode).toBe(500)
+          done()
+        })
+      })
+    })
+
+    it('should reject non-standard status code 299', (done) => {
+      app = numflow()
+      const port = 20008
+
+      app.get('/test', (_req, res) => {
+        try {
+          res.status(299).send('Invalid')
+          done(new Error('Should have thrown'))
+        } catch (err: any) {
+          expect(err.message).toBe('Invalid status code: 299')
+          res.status(500).send('Error caught')
+        }
+      })
+
+      server = app.listen(port, () => {
+        http.get(`http://localhost:${port}/test`, (res) => {
+          expect(res.statusCode).toBe(500)
+          done()
         })
       })
     })

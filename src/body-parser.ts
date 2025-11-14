@@ -20,6 +20,19 @@ export interface BodyParserOptions {
    * Default: true
    */
   extended?: boolean
+
+  /**
+   * Maximum depth of nested objects/arrays in URL-encoded bodies
+   * Mitigates CVE-2024-45590 (Default: 32)
+   * Express.js 5.x compatible
+   */
+  depth?: number
+
+  /**
+   * Maximum number of parameters in URL-encoded bodies (Default: 1000)
+   * Express.js 5.x compatible
+   */
+  parameterLimit?: number
 }
 
 /**
@@ -65,7 +78,12 @@ async function readBody(req: IncomingMessage, limit: number): Promise<Buffer> {
       if (totalLength > limit) {
         req.removeAllListeners('data')
         req.removeAllListeners('end')
-        reject(new Error(`Request body size exceeds limit of ${limit} bytes`))
+        // Express.js 5.x: status 413, type 'entity.too.large'
+        reject(new BodyParserError(
+          `Request body size exceeds limit of ${limit} bytes`,
+          413,
+          'entity.too.large'
+        ))
         return
       }
 
@@ -106,13 +124,19 @@ export function json(options: BodyParserOptions = {}) {
       }
 
       const buffer = await readBody(req, limit)
-      const text = buffer.toString('utf-8')
+      let text = buffer.toString('utf-8')
 
       // Empty body
       if (text.length === 0) {
         req.body = {}
         if (next) next()
         return
+      }
+
+      // Remove UTF-8 BOM if present (RFC 8259 Section 8.1)
+      // UTF-8 BOM: 0xEF 0xBB 0xBF (U+FEFF)
+      if (text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1)
       }
 
       // Parse JSON
@@ -140,11 +164,72 @@ export function json(options: BodyParserOptions = {}) {
 }
 
 /**
+ * Set nested property in object
+ * Supports notation like 'user[profile][name]' = 'John'
+ * Returns the depth of nesting
+ */
+function setNestedProperty(obj: any, path: string, value: any, maxDepth: number): number {
+  // Parse nested keys: user[profile][name] -> ['user', 'profile', 'name']
+  const keys: string[] = []
+  let current = ''
+
+  for (let i = 0; i < path.length; i++) {
+    const char = path[i]
+    if (char === '[') {
+      if (current) {
+        keys.push(current)
+        current = ''
+      }
+    } else if (char === ']') {
+      if (current) {
+        keys.push(current)
+        current = ''
+      }
+    } else {
+      current += char
+    }
+  }
+
+  if (current) {
+    keys.push(current)
+  }
+
+  // Check depth limit (CVE-2024-45590)
+  // Express.js 5.x: status 400, type 'parameters.depth.exceeded'
+  const depth = keys.length
+  if (depth > maxDepth) {
+    throw new BodyParserError(
+      `Request body depth exceeds limit of ${maxDepth}`,
+      400,
+      'parameters.depth.exceeded'
+    )
+  }
+
+  // Set nested property
+  let target = obj
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i]
+    if (!target[key] || typeof target[key] !== 'object') {
+      target[key] = {}
+    }
+    target = target[key]
+  }
+
+  const lastKey = keys[keys.length - 1]
+  target[lastKey] = value
+
+  return depth
+}
+
+/**
  * URL-encoded Body Parser
  * Parses application/x-www-form-urlencoded request bodies
+ * Supports nested objects (Express.js 5.x compatible)
  */
 export function urlencoded(options: BodyParserOptions = {}) {
   const limit = parseLimit(options.limit || '1mb')
+  const maxDepth = options.depth ?? 32  // Default: 32 (Express.js 5.x)
+  const maxParams = options.parameterLimit ?? 1000  // Default: 1000 (Express.js 5.x)
 
   return async (req: any, _res?: any, next?: any): Promise<void> => {
     try {
@@ -175,10 +260,21 @@ export function urlencoded(options: BodyParserOptions = {}) {
       const parsed: Record<string, any> = {}
       const pairs = text.split('&')
 
+      // Check parameter limit
+      // Express.js 5.x: status 413, type 'parameters.too.many'
+      if (pairs.length > maxParams) {
+        throw new BodyParserError(
+          `Request parameters exceed limit of ${maxParams}`,
+          413,
+          'parameters.too.many'
+        )
+      }
+
       for (const pair of pairs) {
         const [key, value] = pair.split('=')
-        const decodedKey = decodeURIComponent(key || '')
-        const decodedValue = decodeURIComponent(value || '')
+        // Replace + with space before decoding (application/x-www-form-urlencoded standard)
+        const decodedKey = decodeURIComponent((key || '').replace(/\+/g, ' '))
+        const decodedValue = decodeURIComponent((value || '').replace(/\+/g, ' '))
 
         if (decodedKey) {
           // Handle array notation: key[]=value
@@ -190,8 +286,13 @@ export function urlencoded(options: BodyParserOptions = {}) {
             if (Array.isArray(parsed[arrayKey])) {
               parsed[arrayKey].push(decodedValue)
             }
-          } else {
-            // Normal key-value
+          }
+          // Handle nested objects: user[profile][name]=John
+          else if (decodedKey.includes('[')) {
+            setNestedProperty(parsed, decodedKey, decodedValue, maxDepth)
+          }
+          // Normal key-value
+          else {
             parsed[decodedKey] = decodedValue
           }
         }
@@ -200,11 +301,20 @@ export function urlencoded(options: BodyParserOptions = {}) {
       req.body = parsed
       if (next) next()
     } catch (err: any) {
-      const error = new Error(`Failed to parse URL-encoded body: ${err.message}`)
-      if (next) {
-        next(error)
+      // Re-throw BodyParserError as-is to preserve status and type
+      if (err instanceof BodyParserError) {
+        if (next) {
+          next(err)
+        } else {
+          throw err
+        }
       } else {
-        throw error
+        const error = new Error(`Failed to parse URL-encoded body: ${err.message}`)
+        if (next) {
+          next(error)
+        } else {
+          throw error
+        }
       }
     }
   }
@@ -281,8 +391,34 @@ export function text(options: BodyParserOptions = {}) {
         return
       }
 
+      // Extract charset from Content-Type (RFC 7231 Section 3.1.1.1)
+      // Examples: "text/plain; charset=utf-8", "text/html; charset=iso-8859-1"
+      const charsetMatch = /charset=([^;,\s]+)/i.exec(contentType)
+      const charset = charsetMatch ? charsetMatch[1].trim().toLowerCase() : 'utf-8'
+
+      // Map common charset names to Node.js encoding names
+      const charsetMap: Record<string, BufferEncoding> = {
+        'utf-8': 'utf8',
+        'utf8': 'utf8',
+        'iso-8859-1': 'latin1',
+        'latin1': 'latin1',
+        'us-ascii': 'ascii',
+        'ascii': 'ascii',
+      }
+
+      // Get encoding, fallback to UTF-8 for unsupported charsets
+      const encoding = charsetMap[charset] || 'utf8'
+
       const buffer = await readBody(req, limit)
-      req.body = buffer.toString('utf-8')
+      let text = buffer.toString(encoding)
+
+      // Remove UTF-8 BOM if present (RFC 3629)
+      // Only for UTF-8 encoded text
+      if (encoding === 'utf8' && text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1)
+      }
+
+      req.body = text
       if (next) next()
     } catch (err: any) {
       const error = new Error(`Failed to parse text body: ${err.message}`)
@@ -349,13 +485,18 @@ export function autoBodyParser(options: BodyParserOptions = {}): (req: IncomingM
 
 /**
  * Body Parser Error
+ * Express.js 5.x compatible error format
  */
 export class BodyParserError extends Error {
-  statusCode: number
+  status: number
+  statusCode: number // Alias for compatibility
+  type: string
 
-  constructor(message: string, statusCode: number = 400) {
+  constructor(message: string, status: number = 400, type: string = 'entity.parse.failed') {
     super(message)
     this.name = 'BodyParserError'
-    this.statusCode = statusCode
+    this.status = status
+    this.statusCode = status // Alias for backward compatibility
+    this.type = type
   }
 }

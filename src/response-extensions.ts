@@ -7,6 +7,25 @@ import { Response, CookieOptions } from './types/index.js'
 import { asInternalResponse } from './utils/type-casting.js'
 
 /**
+ * Valid HTTP status codes as defined in RFC 7231, RFC 6585, and other RFCs
+ * Express.js 5.x compatible
+ */
+const VALID_STATUS_CODES = new Set([
+  // 1xx Informational
+  100, 101, 102, 103,
+  // 2xx Success
+  200, 201, 202, 203, 204, 205, 206, 207, 208, 226,
+  // 3xx Redirection
+  300, 301, 302, 303, 304, 305, 307, 308,
+  // 4xx Client Error
+  400, 401, 402, 403, 404, 405, 406, 407, 408, 409,
+  410, 411, 412, 413, 414, 415, 416, 417, 418, 421,
+  422, 423, 424, 425, 426, 428, 429, 431, 451,
+  // 5xx Server Error
+  500, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511,
+])
+
+/**
  * Extend ServerResponse with Response methods
  * This function adds Express-compatible methods to the response object
  */
@@ -21,8 +40,21 @@ export function extendResponse(res: ServerResponse): Response {
 
   /**
    * Set status code (chainable)
+   * Validates status code according to RFC 7231 (Express.js 5.x compatible)
+   *
+   * @throws {Error} If status code is invalid
    */
   extendedRes.status = function (code: number): Response {
+    // Type validation
+    if (typeof code !== 'number' || code === null || code === undefined || isNaN(code)) {
+      throw new Error(`Invalid status code: ${code}`)
+    }
+
+    // Range and RFC 7231 validation
+    if (!VALID_STATUS_CODES.has(code)) {
+      throw new Error(`Invalid status code: ${code}`)
+    }
+
     this.statusCode = code
     return this
   }
@@ -492,10 +524,8 @@ export function extendResponse(res: ServerResponse): Response {
       const downloadFilename = filename || path.basename(absolutePath)
 
       // Set Content-Disposition header to trigger download
-      this.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${encodeURIComponent(downloadFilename)}"`
-      )
+      // Use res.attachment() for RFC 6266 + RFC 5987 compliance
+      this.attachment(downloadFilename)
 
       // Get MIME type based on file extension
       const mimeType = getMimeType(absolutePath)

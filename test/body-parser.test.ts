@@ -144,6 +144,36 @@ describe('Body Parser', () => {
 
       expect(req.body).toBeDefined()
     })
+
+    it('should remove UTF-8 BOM (RFC 8259 Section 8.1)', async () => {
+      // UTF-8 BOM: 0xEF 0xBB 0xBF (U+FEFF)
+      const jsonWithBOM = '\uFEFF{"name":"John","age":30}'
+      const req = createMockRequest(jsonWithBOM, 'application/json')
+
+      await json()(req)
+
+      expect(req.body).toEqual({ name: 'John', age: 30 })
+    })
+
+    it('should handle JSON with UTF-8 BOM and nested objects', async () => {
+      const jsonWithBOM = '\uFEFF{"user":{"name":"John","address":{"city":"Seoul"}}}'
+      const req = createMockRequest(jsonWithBOM, 'application/json')
+
+      await json()(req)
+
+      expect(req.body.user.name).toBe('John')
+      expect(req.body.user.address.city).toBe('Seoul')
+    })
+
+    it('should not fail on multiple BOMs (edge case)', async () => {
+      // Edge case: multiple BOMs (should remove first one only)
+      const jsonWithMultipleBOMs = '\uFEFF\uFEFF{"value":"test"}'
+      const req = createMockRequest(jsonWithMultipleBOMs, 'application/json')
+
+      // This might fail depending on implementation
+      // JSON.parse('\uFEFF{"value":"test"}') will fail
+      await expect(json()(req)).rejects.toThrow('Invalid JSON')
+    })
   })
 
   describe('URL-encoded Parser', () => {
@@ -185,6 +215,32 @@ describe('Body Parser', () => {
       expect(req.body.emoji).toBe('😀')
     })
 
+    it('should convert + to space (application/x-www-form-urlencoded standard)', async () => {
+      const req = createMockRequest(
+        'name=John+Doe&city=New+York&country=South+Korea',
+        'application/x-www-form-urlencoded'
+      )
+
+      await urlencoded()(req)
+
+      expect(req.body.name).toBe('John Doe')
+      expect(req.body.city).toBe('New York')
+      expect(req.body.country).toBe('South Korea')
+    })
+
+    it('should handle mixed encoding (+ and %20)', async () => {
+      const req = createMockRequest(
+        'msg1=Hello+World&msg2=Hello%20World&msg3=Hello%2BWorld',
+        'application/x-www-form-urlencoded'
+      )
+
+      await urlencoded()(req)
+
+      expect(req.body.msg1).toBe('Hello World')  // + → space
+      expect(req.body.msg2).toBe('Hello World')  // %20 → space
+      expect(req.body.msg3).toBe('Hello+World')  // %2B → literal +
+    })
+
     it('should support array notation (key[])', async () => {
       const req = createMockRequest(
         'tags[]=javascript&tags[]=typescript&tags[]=nodejs',
@@ -214,7 +270,14 @@ describe('Body Parser', () => {
         'application/x-www-form-urlencoded'
       )
 
-      await expect(urlencoded({ limit: 100 })(req)).rejects.toThrow('exceeds limit')
+      try {
+        await urlencoded({ limit: 100 })(req)
+        fail('Should have thrown')
+      } catch (err: any) {
+        expect(err.message).toContain('exceeds limit')
+        expect(err.status).toBe(413)
+        expect(err.type).toBe('entity.too.large')
+      }
     })
 
     it('should skip when body is already parsed', async () => {
@@ -290,6 +353,159 @@ describe('Body Parser', () => {
       await urlencoded({ limit: '1mb' })(req)
 
       expect(req.body).toBeDefined()
+    })
+
+    // CVE-2024-45590: depth limit tests
+    it('should reject body exceeding depth limit (CVE-2024-45590)', async () => {
+      // Create nested object with depth 33 (exceeds default limit of 32)
+      // a[b][c][d]...[z] = value (33 levels deep)
+      const deepKeys = Array.from({ length: 33 }, (_, i) => `level${i}`)
+      const deepBody = deepKeys.reduce((acc, key, i) => {
+        if (i === 0) return `${key}[`
+        if (i === deepKeys.length - 1) return acc + key + ']=value'
+        return acc + key + ']['
+      }, '')
+
+      const req = createMockRequest(
+        deepBody,
+        'application/x-www-form-urlencoded'
+      )
+
+      try {
+        await urlencoded({ depth: 32 })(req)
+        fail('Should have thrown')
+      } catch (err: any) {
+        expect(err.message).toContain('Request body depth exceeds limit of 32')
+        expect(err.status).toBe(400)
+        expect(err.type).toBe('parameters.depth.exceeded')
+      }
+    })
+
+    it('should accept body within depth limit', async () => {
+      // Create nested object with depth 5 (within limit)
+      const req = createMockRequest(
+        'user[profile][contact][email][primary]=test@example.com',
+        'application/x-www-form-urlencoded'
+      )
+
+      await urlencoded({ depth: 32 })(req)
+
+      expect(req.body.user.profile.contact.email.primary).toBe('test@example.com')
+    })
+
+    it('should use default depth limit of 32', async () => {
+      // Create nested object with depth 33 (exceeds default)
+      const deepKeys = Array.from({ length: 33 }, (_, i) => `level${i}`)
+      const deepBody = deepKeys.reduce((acc, key, i) => {
+        if (i === 0) return `${key}[`
+        if (i === deepKeys.length - 1) return acc + key + ']=value'
+        return acc + key + ']['
+      }, '')
+
+      const req = createMockRequest(
+        deepBody,
+        'application/x-www-form-urlencoded'
+      )
+
+      // Default depth should be 32
+      try {
+        await urlencoded()(req)
+        fail('Should have thrown')
+      } catch (err: any) {
+        expect(err.message).toContain('Request body depth exceeds limit of 32')
+        expect(err.status).toBe(400)
+        expect(err.type).toBe('parameters.depth.exceeded')
+      }
+    })
+
+    it('should allow custom depth limit', async () => {
+      // Create nested object with depth 10
+      const req = createMockRequest(
+        'a[b][c][d][e][f][g][h][i][j]=value',
+        'application/x-www-form-urlencoded'
+      )
+
+      // Set lower depth limit of 5
+      try {
+        await urlencoded({ depth: 5 })(req)
+        fail('Should have thrown')
+      } catch (err: any) {
+        expect(err.message).toContain('Request body depth exceeds limit of 5')
+        expect(err.status).toBe(400)
+        expect(err.type).toBe('parameters.depth.exceeded')
+      }
+    })
+
+    // parameterLimit tests
+    it('should reject body exceeding parameter limit', async () => {
+      // Create 1001 parameters (exceeds default limit of 1000)
+      const params = Array.from({ length: 1001 }, (_, i) => `param${i}=value${i}`).join('&')
+      const req = createMockRequest(
+        params,
+        'application/x-www-form-urlencoded'
+      )
+
+      try {
+        await urlencoded({ parameterLimit: 1000 })(req)
+        fail('Should have thrown')
+      } catch (err: any) {
+        expect(err.message).toContain('Request parameters exceed limit of 1000')
+        expect(err.status).toBe(413)
+        expect(err.type).toBe('parameters.too.many')
+      }
+    })
+
+    it('should accept body within parameter limit', async () => {
+      // Create 100 parameters (within limit)
+      const params = Array.from({ length: 100 }, (_, i) => `param${i}=value${i}`).join('&')
+      const req = createMockRequest(
+        params,
+        'application/x-www-form-urlencoded'
+      )
+
+      await urlencoded({ parameterLimit: 1000 })(req)
+
+      expect(req.body.param0).toBe('value0')
+      expect(req.body.param99).toBe('value99')
+      expect(Object.keys(req.body).length).toBe(100)
+    })
+
+    it('should use default parameter limit of 1000', async () => {
+      // Create 1001 parameters (exceeds default)
+      const params = Array.from({ length: 1001 }, (_, i) => `param${i}=value${i}`).join('&')
+      const req = createMockRequest(
+        params,
+        'application/x-www-form-urlencoded'
+      )
+
+      // Default parameterLimit should be 1000
+      try {
+        await urlencoded()(req)
+        fail('Should have thrown')
+      } catch (err: any) {
+        expect(err.message).toContain('Request parameters exceed limit of 1000')
+        expect(err.status).toBe(413)
+        expect(err.type).toBe('parameters.too.many')
+      }
+    })
+
+    it('should allow custom parameter limit', async () => {
+      // Create 51 parameters
+      const params = Array.from({ length: 51 }, (_, i) => `param${i}=value${i}`).join('&')
+      const req = createMockRequest(
+        params,
+        'application/x-www-form-urlencoded'
+      )
+
+      // Set lower limit of 50
+      try {
+        await urlencoded({ parameterLimit: 50 })(req)
+        fail('Should have thrown')
+      } catch (err: any) {
+        expect(err.message).toContain('Request parameters exceed limit of 50')
+        expect(err.status).toBe(413)
+        expect(err.type).toBe('parameters.too.many')
+      }
     })
   })
 
@@ -500,6 +716,90 @@ describe('Body Parser', () => {
       await text({ limit: '1mb' })(req)
 
       expect(req.body).toBeDefined()
+    })
+
+    it('should remove UTF-8 BOM (RFC 3629)', async () => {
+      // UTF-8 BOM: U+FEFF
+      const textWithBOM = '\uFEFFHello, World!'
+      const req = createMockRequest(textWithBOM, 'text/plain')
+
+      await text()(req)
+
+      expect(req.body).toBe('Hello, World!')
+      expect(req.body).not.toContain('\uFEFF')
+    })
+
+    it('should handle text with UTF-8 BOM and special characters', async () => {
+      const textWithBOM = '\uFEFF안녕하세요 😀'
+      const req = createMockRequest(textWithBOM, 'text/plain')
+
+      await text()(req)
+
+      expect(req.body).toBe('안녕하세요 😀')
+    })
+
+    it('should handle multiline text with BOM', async () => {
+      const textWithBOM = '\uFEFFLine 1\nLine 2\nLine 3'
+      const req = createMockRequest(textWithBOM, 'text/plain')
+
+      await text()(req)
+
+      expect(req.body).toBe('Line 1\nLine 2\nLine 3')
+    })
+
+    it('should respect charset parameter (RFC 7231 Section 3.1.1.1)', async () => {
+      // ISO-8859-1 (Latin-1) encoded text with special characters
+      // "café" in Latin-1: c=0x63, a=0x61, f=0x66, é=0xE9
+      const latin1Buffer = Buffer.from([0x63, 0x61, 0x66, 0xE9])
+      const req = createMockRequestWithBuffer(
+        latin1Buffer,
+        'text/plain; charset=iso-8859-1'
+      )
+
+      await text()(req)
+
+      expect(req.body).toBe('café')
+    })
+
+    it('should handle latin1 charset (alias)', async () => {
+      const latin1Buffer = Buffer.from([0x48, 0x65, 0x6C, 0x6C, 0x6F, 0xE9]) // "Helloé"
+      const req = createMockRequestWithBuffer(
+        latin1Buffer,
+        'text/plain; charset=latin1'
+      )
+
+      await text()(req)
+
+      expect(req.body).toBe('Helloé')
+    })
+
+    it('should default to utf-8 if charset not specified', async () => {
+      const req = createMockRequest('안녕하세요', 'text/plain')
+
+      await text()(req)
+
+      expect(req.body).toBe('안녕하세요')
+    })
+
+    it('should default to utf-8 for unsupported charset', async () => {
+      // Unsupported charset should fallback to UTF-8
+      const req = createMockRequest('Hello', 'text/plain; charset=unsupported-encoding')
+
+      await text()(req)
+
+      expect(req.body).toBe('Hello')
+    })
+
+    it('should handle ASCII charset', async () => {
+      const asciiBuffer = Buffer.from('Hello World', 'ascii')
+      const req = createMockRequestWithBuffer(
+        asciiBuffer,
+        'text/plain; charset=us-ascii'
+      )
+
+      await text()(req)
+
+      expect(req.body).toBe('Hello World')
     })
   })
 })
