@@ -555,4 +555,141 @@ describe('CORS Middleware', () => {
       })
     })
   })
+
+  describe('With inject()', () => {
+    it('should set default CORS headers with inject()', async () => {
+      const app = numflow()
+
+      app.use(cors())
+      app.get('/test', (_req, res) => {
+        res.send('OK')
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+        headers: {
+          Origin: 'http://example.com',
+        },
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers['access-control-allow-origin']).toBe('*')
+    })
+
+    it('should handle specific origin with inject()', async () => {
+      const app = numflow()
+
+      app.use(cors({ origin: 'http://example.com' }))
+      app.get('/test', (_req, res) => {
+        res.send('OK')
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+        headers: {
+          Origin: 'http://example.com',
+        },
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers['access-control-allow-origin']).toBe('http://example.com')
+      expect(response.headers['vary']).toBe('Origin')
+    })
+
+    it('should handle origin array with inject()', async () => {
+      const app = numflow()
+
+      app.use(cors({ origin: ['http://example.com', 'http://test.com'] }))
+      app.get('/test', (_req, res) => {
+        res.send('OK')
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+        headers: {
+          Origin: 'http://test.com',
+        },
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers['access-control-allow-origin']).toBe('http://test.com')
+    })
+
+    it('should handle credentials with inject()', async () => {
+      const app = numflow()
+
+      app.use(cors({ credentials: true, origin: 'http://example.com' }))
+      app.get('/test', (_req, res) => {
+        res.send('OK')
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+        headers: {
+          Origin: 'http://example.com',
+        },
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers['access-control-allow-credentials']).toBe('true')
+    })
+
+    it('should handle OPTIONS preflight request with inject()', async () => {
+      const app = numflow()
+
+      app.use(cors())
+      app.options('/test', (_req, res) => {
+        res.sendStatus(204)
+      })
+
+      const response = await app.inject({
+        method: 'OPTIONS',
+        url: '/test',
+        headers: {
+          Origin: 'http://example.com',
+          'Access-Control-Request-Method': 'POST',
+        },
+      })
+
+      expect(response.statusCode).toBe(204)
+      expect(response.headers['access-control-allow-origin']).toBe('*')
+      expect(response.headers['access-control-allow-methods']).toBeDefined()
+    })
+
+    it('should apply complex CORS settings with inject()', async () => {
+      const app = numflow()
+
+      app.use(
+        cors({
+          origin: 'http://example.com',
+          credentials: true,
+          methods: ['GET', 'POST', 'PUT'],
+          allowedHeaders: ['Content-Type', 'Authorization'],
+          exposedHeaders: ['X-Total-Count'],
+          maxAge: 86400,
+        })
+      )
+      app.get('/test', (_req, res) => {
+        res.send('OK')
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+        headers: {
+          Origin: 'http://example.com',
+        },
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers['access-control-allow-origin']).toBe('http://example.com')
+      expect(response.headers['access-control-allow-credentials']).toBe('true')
+      expect(response.headers['access-control-expose-headers']).toBe('X-Total-Count')
+      expect(response.headers['vary']).toBe('Origin')
+    })
+  })
 })

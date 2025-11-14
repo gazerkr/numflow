@@ -313,4 +313,127 @@ describe('Cookie Parser Middleware', () => {
       })
     })
   })
+
+  describe('With inject()', () => {
+    it('should parse cookies with inject()', async () => {
+      const app = numflow()
+
+      app.use(cookieParser())
+      app.get('/test', (req, res) => {
+        res.json({ cookies: req.cookies })
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+        headers: {
+          Cookie: 'name=John; age=30',
+        },
+      })
+
+      expect(response.statusCode).toBe(200)
+      const body = JSON.parse(response.payload)
+      expect(body.cookies).toEqual({ name: 'John', age: '30' })
+    })
+
+    it('should handle empty cookies with inject()', async () => {
+      const app = numflow()
+
+      app.use(cookieParser())
+      app.get('/test', (req, res) => {
+        res.json({ cookies: req.cookies })
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+      })
+
+      expect(response.statusCode).toBe(200)
+      const body = JSON.parse(response.payload)
+      expect(body.cookies).toEqual({})
+    })
+
+    it('should parse signed cookies with inject()', async () => {
+      const app = numflow()
+
+      app.use(cookieParser('my-secret'))
+      app.get('/test', (req, res) => {
+        res.json({
+          cookies: req.cookies,
+          signedCookies: req.signedCookies
+        })
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+        headers: {
+          Cookie: 'name=John; s:session=abc123.invalid',
+        },
+      })
+
+      expect(response.statusCode).toBe(200)
+      const body = JSON.parse(response.payload)
+      expect(body.cookies.name).toBe('John')
+      expect(body.signedCookies).toEqual({})
+    })
+
+    it('should decode URL-encoded cookies with inject()', async () => {
+      const app = numflow()
+
+      app.use(cookieParser())
+      app.get('/test', (req, res) => {
+        res.json({ cookies: req.cookies })
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+        headers: {
+          Cookie: 'message=Hello%20World; name=John%20Doe',
+        },
+      })
+
+      expect(response.statusCode).toBe(200)
+      const body = JSON.parse(response.payload)
+      expect(body.cookies.message).toBe('Hello World')
+      expect(body.cookies.name).toBe('John Doe')
+    })
+
+    it('should work with multiple middleware in inject()', async () => {
+      const app = numflow()
+      const calls: string[] = []
+
+      app.use((_req: any, _res: any, next: any) => {
+        calls.push('middleware1')
+        next()
+      })
+
+      app.use(cookieParser())
+
+      app.use((_req: any, _res: any, next: any) => {
+        calls.push('middleware2')
+        next()
+      })
+
+      app.get('/test', (req, res) => {
+        calls.push('handler')
+        res.json({ cookies: req.cookies })
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+        headers: {
+          Cookie: 'test=value',
+        },
+      })
+
+      expect(response.statusCode).toBe(200)
+      const body = JSON.parse(response.payload)
+      expect(body.cookies).toEqual({ test: 'value' })
+      expect(calls).toEqual(['middleware1', 'middleware2', 'handler'])
+    })
+  })
 })

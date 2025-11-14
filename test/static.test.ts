@@ -291,4 +291,131 @@ describe('numflow.static()', () => {
       fs.rmSync(dotfileDir, { recursive: true, force: true })
     }
   })
+
+  describe('With inject()', () => {
+    it('should serve static files with inject()', async () => {
+      const app = numflow()
+      app.use(numflow.static(fixturesDir))
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test.txt',
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.payload).toBe('Hello Static')
+      expect(response.headers['content-type']).toContain('text/plain')
+    })
+
+    it('should serve HTML files with inject()', async () => {
+      const app = numflow()
+      app.use(numflow.static(fixturesDir))
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test.html',
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.payload).toContain('Test HTML')
+      expect(response.headers['content-type']).toContain('text/html')
+    })
+
+    it('should serve JSON files with inject()', async () => {
+      const app = numflow()
+      app.use(numflow.static(fixturesDir))
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test.json',
+      })
+
+      expect(response.statusCode).toBe(200)
+      const json = JSON.parse(response.payload)
+      expect(json).toEqual({ message: 'test' })
+      expect(response.headers['content-type']).toContain('application/json')
+    })
+
+    it('should serve files from subdirectories with inject()', async () => {
+      const app = numflow()
+      app.use(numflow.static(fixturesDir))
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/sub/nested.txt',
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.payload).toBe('Nested File')
+    })
+
+    it('should return 404 for non-existent files with inject()', async () => {
+      const app = numflow()
+      app.use(numflow.static(fixturesDir))
+
+      app.get('*', (_req, res) => {
+        res.status(404).send('Not Found')
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/nonexistent.txt',
+      })
+
+      expect(response.statusCode).toBe(404)
+      expect(response.payload).toBe('Not Found')
+    })
+
+    it('should serve from mounted path with inject()', async () => {
+      const app = numflow()
+      app.use('/public', numflow.static(fixturesDir))
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/public/test.txt',
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.payload).toBe('Hello Static')
+    })
+
+    it('should serve index.html with inject()', async () => {
+      const indexDir = path.join(fixturesDir, 'index-inject')
+      fs.mkdirSync(indexDir, { recursive: true })
+      fs.writeFileSync(path.join(indexDir, 'index.html'), '<html>Index with inject</html>')
+
+      const app = numflow()
+      app.use(numflow.static(indexDir))
+
+      try {
+        const response = await app.inject({
+          method: 'GET',
+          url: '/',
+        })
+
+        expect(response.statusCode).toBe(200)
+        expect(response.payload).toContain('Index with inject')
+        expect(response.headers['content-type']).toContain('text/html')
+      } finally {
+        fs.rmSync(indexDir, { recursive: true, force: true })
+      }
+    })
+
+    it('should prevent directory traversal with inject()', async () => {
+      const app = numflow()
+      app.use(numflow.static(fixturesDir))
+
+      app.get('*', (_req, res) => {
+        res.status(404).send('Not Found')
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/../../../package.json',
+      })
+
+      expect(response.statusCode).toBe(404)
+      expect(response.payload).toBe('Not Found')
+    })
+  })
 })

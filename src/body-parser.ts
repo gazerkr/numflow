@@ -90,25 +90,28 @@ export function json(options: BodyParserOptions = {}) {
   const limit = parseLimit(options.limit || '1mb')
   const strict = options.strict !== false
 
-  return async (req: any): Promise<void> => {
-    // Check Content-Type
-    const contentType = req.headers['content-type'] || ''
-    if (!contentType.includes('application/json')) {
-      return
-    }
-
-    // Skip if body already parsed
-    if (req.body !== undefined) {
-      return
-    }
-
+  return async (req: any, _res?: any, next?: any): Promise<void> => {
     try {
+      // Check Content-Type
+      const contentType = req.headers['content-type'] || ''
+      if (!contentType.includes('application/json')) {
+        if (next) next()
+        return
+      }
+
+      // Skip if body already parsed
+      if (req.body !== undefined) {
+        if (next) next()
+        return
+      }
+
       const buffer = await readBody(req, limit)
       const text = buffer.toString('utf-8')
 
       // Empty body
       if (text.length === 0) {
         req.body = {}
+        if (next) next()
         return
       }
 
@@ -121,11 +124,17 @@ export function json(options: BodyParserOptions = {}) {
       }
 
       req.body = parsed
+      if (next) next()
     } catch (err: any) {
-      if (err instanceof SyntaxError) {
-        throw new Error(`Invalid JSON: ${err.message}`)
+      const error = err instanceof SyntaxError
+        ? new Error(`Invalid JSON: ${err.message}`)
+        : err
+
+      if (next) {
+        next(error)
+      } else {
+        throw error
       }
-      throw err
     }
   }
 }
@@ -137,25 +146,28 @@ export function json(options: BodyParserOptions = {}) {
 export function urlencoded(options: BodyParserOptions = {}) {
   const limit = parseLimit(options.limit || '1mb')
 
-  return async (req: any): Promise<void> => {
-    // Check Content-Type
-    const contentType = req.headers['content-type'] || ''
-    if (!contentType.includes('application/x-www-form-urlencoded')) {
-      return
-    }
-
-    // Skip if body already parsed
-    if (req.body !== undefined) {
-      return
-    }
-
+  return async (req: any, _res?: any, next?: any): Promise<void> => {
     try {
+      // Check Content-Type
+      const contentType = req.headers['content-type'] || ''
+      if (!contentType.includes('application/x-www-form-urlencoded')) {
+        if (next) next()
+        return
+      }
+
+      // Skip if body already parsed
+      if (req.body !== undefined) {
+        if (next) next()
+        return
+      }
+
       const buffer = await readBody(req, limit)
       const text = buffer.toString('utf-8')
 
       // Empty body
       if (text.length === 0) {
         req.body = {}
+        if (next) next()
         return
       }
 
@@ -186,8 +198,14 @@ export function urlencoded(options: BodyParserOptions = {}) {
       }
 
       req.body = parsed
+      if (next) next()
     } catch (err: any) {
-      throw new Error(`Failed to parse URL-encoded body: ${err.message}`)
+      const error = new Error(`Failed to parse URL-encoded body: ${err.message}`)
+      if (next) {
+        next(error)
+      } else {
+        throw error
+      }
     }
   }
 }
@@ -199,33 +217,41 @@ export function urlencoded(options: BodyParserOptions = {}) {
 export function raw(options: BodyParserOptions = {}) {
   const limit = parseLimit(options.limit || '1mb')
 
-  return async (req: any): Promise<void> => {
-    // Check Content-Type (optional - can accept any type)
-    const contentType = req.headers['content-type'] || ''
-
-    // Only parse if Content-Type is application/octet-stream or similar
-    // Or if explicitly set to parse all
-    if (
-      contentType &&
-      !contentType.includes('application/octet-stream') &&
-      !contentType.includes('application/') &&
-      !contentType.includes('image/') &&
-      !contentType.includes('video/') &&
-      !contentType.includes('audio/')
-    ) {
-      return
-    }
-
-    // Skip if body already parsed
-    if (req.body !== undefined) {
-      return
-    }
-
+  return async (req: any, _res?: any, next?: any): Promise<void> => {
     try {
+      // Check Content-Type (optional - can accept any type)
+      const contentType = req.headers['content-type'] || ''
+
+      // Only parse if Content-Type is application/octet-stream or similar
+      // Or if explicitly set to parse all
+      if (
+        contentType &&
+        !contentType.includes('application/octet-stream') &&
+        !contentType.includes('application/') &&
+        !contentType.includes('image/') &&
+        !contentType.includes('video/') &&
+        !contentType.includes('audio/')
+      ) {
+        if (next) next()
+        return
+      }
+
+      // Skip if body already parsed
+      if (req.body !== undefined) {
+        if (next) next()
+        return
+      }
+
       const buffer = await readBody(req, limit)
       req.body = buffer
+      if (next) next()
     } catch (err: any) {
-      throw new Error(`Failed to parse raw body: ${err.message}`)
+      const error = new Error(`Failed to parse raw body: ${err.message}`)
+      if (next) {
+        next(error)
+      } else {
+        throw error
+      }
     }
   }
 }
@@ -237,26 +263,34 @@ export function raw(options: BodyParserOptions = {}) {
 export function text(options: BodyParserOptions = {}) {
   const limit = parseLimit(options.limit || '1mb')
 
-  return async (req: any): Promise<void> => {
-    // Check Content-Type
-    const contentType = req.headers['content-type'] || ''
-    if (
-      !contentType.includes('text/plain') &&
-      !contentType.includes('text/')
-    ) {
-      return
-    }
-
-    // Skip if body already parsed
-    if (req.body !== undefined) {
-      return
-    }
-
+  return async (req: any, _res?: any, next?: any): Promise<void> => {
     try {
+      // Check Content-Type
+      const contentType = req.headers['content-type'] || ''
+      if (
+        !contentType.includes('text/plain') &&
+        !contentType.includes('text/')
+      ) {
+        if (next) next()
+        return
+      }
+
+      // Skip if body already parsed
+      if (req.body !== undefined) {
+        if (next) next()
+        return
+      }
+
       const buffer = await readBody(req, limit)
       req.body = buffer.toString('utf-8')
+      if (next) next()
     } catch (err: any) {
-      throw new Error(`Failed to parse text body: ${err.message}`)
+      const error = new Error(`Failed to parse text body: ${err.message}`)
+      if (next) {
+        next(error)
+      } else {
+        throw error
+      }
     }
   }
 }

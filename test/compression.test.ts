@@ -378,4 +378,116 @@ describe('Compression Middleware', () => {
       })
     })
   })
+
+  describe('With inject()', () => {
+    it('should compress with inject() when Accept-Encoding is provided', async () => {
+      const app = numflow()
+
+      app.use(compression())
+      app.get('/test', (_req, res) => {
+        res.send('a'.repeat(2000))
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+        headers: {
+          'Accept-Encoding': 'gzip',
+        },
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers['content-encoding']).toBe('gzip')
+      expect(response.headers['vary']).toBe('Accept-Encoding')
+
+      // Decompress and verify
+      const decompressed = zlib.gunzipSync(Buffer.from(response.rawPayload))
+      expect(decompressed.toString()).toBe('a'.repeat(2000))
+    })
+
+    it('should not compress with inject() when Accept-Encoding is absent', async () => {
+      const app = numflow()
+
+      app.use(compression())
+      app.get('/test', (_req, res) => {
+        res.send('Hello World')
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers['content-encoding']).toBeUndefined()
+      expect(response.payload).toBe('Hello World')
+    })
+
+    it('should not compress small responses with inject()', async () => {
+      const app = numflow()
+
+      app.use(compression())
+      app.get('/test', (_req, res) => {
+        res.send('small')
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+        headers: {
+          'Accept-Encoding': 'gzip',
+        },
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers['content-encoding']).toBeUndefined()
+      expect(response.payload).toBe('small')
+    })
+
+    it('should compress JSON with inject()', async () => {
+      const app = numflow()
+
+      app.use(compression())
+      app.get('/test', (_req, res) => {
+        res.json({ data: 'a'.repeat(2000) })
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+        headers: {
+          'Accept-Encoding': 'gzip',
+        },
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers['content-encoding']).toBe('gzip')
+      expect(response.headers['content-type']).toContain('application/json')
+
+      // Decompress and verify JSON
+      const decompressed = zlib.gunzipSync(Buffer.from(response.rawPayload))
+      const json = JSON.parse(decompressed.toString())
+      expect(json.data).toBe('a'.repeat(2000))
+    })
+
+    it('should work with custom threshold in inject()', async () => {
+      const app = numflow()
+
+      app.use(compression({ threshold: 500 }))
+      app.get('/test', (_req, res) => {
+        res.send('a'.repeat(600))
+      })
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+        headers: {
+          'Accept-Encoding': 'gzip',
+        },
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(response.headers['content-encoding']).toBe('gzip')
+    })
+  })
 })

@@ -750,4 +750,290 @@ describe('Middleware System', () => {
       })
     })
   })
+
+  // ============================================================================
+  // 8. Body Parser Middleware Tests (listen + inject)
+  // ============================================================================
+  describe('Body Parser Middleware', () => {
+    describe('With HTTP Server (listen)', () => {
+      let app: Application
+      let server: http.Server
+
+      afterEach(async () => {
+        if (server && server.listening) {
+          if (typeof server.closeAllConnections === 'function') {
+            server.closeAllConnections()
+          }
+          await new Promise<void>((resolve) => {
+            const timeout = setTimeout(() => resolve(), 2000)
+            server.close(() => {
+              clearTimeout(timeout)
+              resolve()
+            })
+          })
+        }
+        server = null as any
+      })
+
+      it('should parse JSON body with app.use(numflow.json())', (done) => {
+        app = numflow()
+        const port = 3217
+
+        app.use(numflow.json())
+
+        app.post('/users', (req: any, res: Response) => {
+          res.json({ received: req.body })
+        })
+
+        server = app.listen(port, () => {
+          const postData = JSON.stringify({ name: 'John', age: 30 })
+          const options = {
+            hostname: 'localhost',
+            port,
+            path: '/users',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData),
+            },
+          }
+
+          const req = http.request(options, (res) => {
+            let data = ''
+            res.on('data', (chunk) => {
+              data += chunk
+            })
+            res.on('end', () => {
+              const result = JSON.parse(data)
+              expect(result.received).toEqual({ name: 'John', age: 30 })
+              done()
+            })
+          })
+
+          req.write(postData)
+          req.end()
+        })
+      })
+
+      it('should parse URL-encoded body with app.use(numflow.urlencoded())', (done) => {
+        app = numflow()
+        const port = 3218
+
+        app.use(numflow.urlencoded())
+
+        app.post('/form', (req: any, res: Response) => {
+          res.json({ received: req.body })
+        })
+
+        server = app.listen(port, () => {
+          const postData = 'name=John&age=30&city=Seoul'
+          const options = {
+            hostname: 'localhost',
+            port,
+            path: '/form',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Content-Length': Buffer.byteLength(postData),
+            },
+          }
+
+          const req = http.request(options, (res) => {
+            let data = ''
+            res.on('data', (chunk) => {
+              data += chunk
+            })
+            res.on('end', () => {
+              const result = JSON.parse(data)
+              expect(result.received).toEqual({ name: 'John', age: '30', city: 'Seoul' })
+              done()
+            })
+          })
+
+          req.write(postData)
+          req.end()
+        })
+      })
+
+      it('should work with multiple body parser middleware', (done) => {
+        app = numflow()
+        const port = 3219
+
+        app.use(numflow.json())
+        app.use(numflow.urlencoded())
+
+        app.post('/api', (req: any, res: Response) => {
+          res.json({ received: req.body, contentType: req.headers['content-type'] })
+        })
+
+        server = app.listen(port, () => {
+          const postData = JSON.stringify({ test: 'data' })
+          const options = {
+            hostname: 'localhost',
+            port,
+            path: '/api',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData),
+            },
+          }
+
+          const req = http.request(options, (res) => {
+            let data = ''
+            res.on('data', (chunk) => {
+              data += chunk
+            })
+            res.on('end', () => {
+              const result = JSON.parse(data)
+              expect(result.received).toEqual({ test: 'data' })
+              done()
+            })
+          })
+
+          req.write(postData)
+          req.end()
+        })
+      })
+
+      it('should skip body parsing for GET requests', (done) => {
+        app = numflow()
+        const port = 3220
+
+        app.use(numflow.json())
+
+        app.get('/test', (req: any, res: Response) => {
+          res.json({ bodyParsed: req.body !== undefined })
+        })
+
+        server = app.listen(port, () => {
+          http.get(`http://localhost:${port}/test`, (res) => {
+            let data = ''
+            res.on('data', (chunk) => {
+              data += chunk
+            })
+            res.on('end', () => {
+              const result = JSON.parse(data)
+              expect(result.bodyParsed).toBe(false)
+              done()
+            })
+          })
+        })
+      })
+    })
+
+    describe('With inject()', () => {
+      it('should parse JSON body with inject()', async () => {
+        const app = numflow()
+
+        app.use(numflow.json())
+
+        app.post('/users', (req: any, res: Response) => {
+          res.json({ received: req.body })
+        })
+
+        const response = await app.inject({
+          method: 'POST',
+          url: '/users',
+          payload: { name: 'John', age: 30 },
+          headers: {
+            'content-type': 'application/json',
+          },
+        })
+
+        expect(response.statusCode).toBe(200)
+        const body = JSON.parse(response.payload)
+        expect(body.received).toEqual({ name: 'John', age: 30 })
+      })
+
+      it('should parse URL-encoded body with inject()', async () => {
+        const app = numflow()
+
+        app.use(numflow.urlencoded())
+
+        app.post('/form', (req: any, res: Response) => {
+          res.json({ received: req.body })
+        })
+
+        const response = await app.inject({
+          method: 'POST',
+          url: '/form',
+          payload: 'name=John&age=30',
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+          },
+        })
+
+        expect(response.statusCode).toBe(200)
+        const body = JSON.parse(response.payload)
+        expect(body.received).toEqual({ name: 'John', age: '30' })
+      })
+
+      it('should work with multiple body parser middleware in inject()', async () => {
+        const app = numflow()
+
+        app.use(numflow.json())
+        app.use(numflow.urlencoded())
+
+        app.post('/api', (req: any, res: Response) => {
+          res.json({ received: req.body })
+        })
+
+        const response = await app.inject({
+          method: 'POST',
+          url: '/api',
+          payload: { test: 'data' },
+          headers: {
+            'content-type': 'application/json',
+          },
+        })
+
+        expect(response.statusCode).toBe(200)
+        const body = JSON.parse(response.payload)
+        expect(body.received).toEqual({ test: 'data' })
+      })
+
+      it('should skip body parsing for GET requests in inject()', async () => {
+        const app = numflow()
+
+        app.use(numflow.json())
+
+        app.get('/test', (req: any, res: Response) => {
+          res.json({ bodyParsed: req.body !== undefined })
+        })
+
+        const response = await app.inject({
+          method: 'GET',
+          url: '/test',
+        })
+
+        expect(response.statusCode).toBe(200)
+        const body = JSON.parse(response.payload)
+        expect(body.bodyParsed).toBe(false)
+      })
+
+      it('should handle empty body in inject()', async () => {
+        const app = numflow()
+
+        app.use(numflow.json())
+
+        app.post('/empty', (req: any, res: Response) => {
+          res.json({ body: req.body })
+        })
+
+        const response = await app.inject({
+          method: 'POST',
+          url: '/empty',
+          payload: '',
+          headers: {
+            'content-type': 'application/json',
+          },
+        })
+
+        expect(response.statusCode).toBe(200)
+        const body = JSON.parse(response.payload)
+        expect(body.body).toEqual({})
+      })
+    })
+  })
 })
