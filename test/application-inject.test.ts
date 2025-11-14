@@ -347,4 +347,90 @@ describe('Application.inject()', () => {
       expect(body.userAgent).toBe('Numflow Test')
     })
   })
+
+  describe('ESM/CJS Compatibility', () => {
+    it('should work with dynamic import (ESM/CJS compatible)', async () => {
+      const app = numflow()
+
+      app.get('/test', (_req, res) => {
+        res.json({ module: 'dynamic-import' })
+      })
+
+      // This test verifies that inject() uses dynamic import()
+      // which works in both ESM and CJS environments
+      const response = await app.inject({
+        method: 'GET',
+        url: '/test',
+      })
+
+      expect(response.statusCode).toBe(200)
+      const body = JSON.parse(response.payload)
+      expect(body.module).toBe('dynamic-import')
+    })
+
+    it('should handle multiple inject() calls without issues', async () => {
+      const app = numflow()
+
+      app.get('/test1', (_req, res) => {
+        res.json({ test: 1 })
+      })
+
+      app.get('/test2', (_req, res) => {
+        res.json({ test: 2 })
+      })
+
+      // Multiple calls to verify lazy loading works correctly
+      const response1 = await app.inject({ method: 'GET', url: '/test1' })
+      const response2 = await app.inject({ method: 'GET', url: '/test2' })
+      const response3 = await app.inject({ method: 'GET', url: '/test1' })
+
+      expect(response1.statusCode).toBe(200)
+      expect(response2.statusCode).toBe(200)
+      expect(response3.statusCode).toBe(200)
+
+      expect(JSON.parse(response1.payload).test).toBe(1)
+      expect(JSON.parse(response2.payload).test).toBe(2)
+      expect(JSON.parse(response3.payload).test).toBe(1)
+    })
+
+    it('should work in parallel inject() calls', async () => {
+      const app = numflow()
+
+      app.get('/parallel/:id', (req, res) => {
+        res.json({ id: req.params!.id })
+      })
+
+      // Parallel calls to test dynamic import stability
+      const [res1, res2, res3] = await Promise.all([
+        app.inject({ method: 'GET', url: '/parallel/1' }),
+        app.inject({ method: 'GET', url: '/parallel/2' }),
+        app.inject({ method: 'GET', url: '/parallel/3' }),
+      ])
+
+      expect(res1.statusCode).toBe(200)
+      expect(res2.statusCode).toBe(200)
+      expect(res3.statusCode).toBe(200)
+
+      expect(JSON.parse(res1.payload).id).toBe('1')
+      expect(JSON.parse(res2.payload).id).toBe('2')
+      expect(JSON.parse(res3.payload).id).toBe('3')
+    })
+
+    it('should not throw "require is not defined" error', async () => {
+      // This test specifically checks that we don't use require()
+      // which would fail in ESM environments
+      const app = numflow()
+
+      app.get('/esm-safe', (_req, res) => {
+        res.json({ safe: true })
+      })
+
+      // Should not throw ReferenceError: require is not defined
+      await expect(
+        app.inject({ method: 'GET', url: '/esm-safe' })
+      ).resolves.toMatchObject({
+        statusCode: 200,
+      })
+    })
+  })
 })

@@ -955,20 +955,23 @@ export class Application extends EventEmitter {
     options: string | import('light-my-request').InjectOptions,
     callback?: import('light-my-request').CallbackFunc
   ): Promise<import('light-my-request').Response> | void {
-    // Lazy load light-my-request (performance optimization)
-    const lightMyRequest = require('light-my-request')
-
-    // Wait for Feature registration
-    const ready = async (): Promise<void> => {
+    // Wait for Feature registration and lazy load light-my-request
+    // Using dynamic import() for ESM/CJS compatibility
+    const ready = async (): Promise<any> => {
       if (this.featureRegistrationPromises.length > 0) {
         await Promise.all(this.featureRegistrationPromises)
       }
+
+      // Dynamic import for ESM/CJS compatibility
+      const lightMyRequestModule = await import('light-my-request')
+      // Handle both ESM default export and CJS module.exports
+      return lightMyRequestModule.default || lightMyRequestModule
     }
 
     if (callback) {
       // Callback style
       ready()
-        .then(() => {
+        .then((lightMyRequest) => {
           lightMyRequest(this.handleRequest.bind(this), options, callback)
         })
         .catch(err => callback(err, undefined))
@@ -976,7 +979,7 @@ export class Application extends EventEmitter {
       // Promise style
       return new Promise((resolve, reject) => {
         ready()
-          .then(() => {
+          .then((lightMyRequest) => {
             lightMyRequest(this.handleRequest.bind(this), options, (err: Error | null, res: import('light-my-request').Response) => {
               if (err) reject(err)
               else resolve(res)
