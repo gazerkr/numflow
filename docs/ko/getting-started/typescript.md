@@ -1,5 +1,15 @@
 # TypeScript 사용
 
+## 목차
+
+- [1. TypeScript 설치](#1-typescript-설치)
+- [2. tsconfig.json 생성](#2-tsconfigjson-생성)
+- [3. TypeScript 애플리케이션 작성](#3-typescript-애플리케이션-작성)
+- [4. 빌드 및 실행](#4-빌드-및-실행)
+- [5. 개발 모드 (ts-node)](#5-개발-모드-ts-node)
+
+---
+
 Numflow는 TypeScript를 완벽하게 지원합니다.
 
 ## 1. TypeScript 설치

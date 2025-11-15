@@ -2,11 +2,11 @@
 
 > Express 5.x 호환 고성능 Node.js 웹 프레임워크
 
-Numflow는 Express 5.x API와 완전히 호환되면서 평균 3배 빠른 성능을 제공하는 Node.js 웹 프레임워크입니다.
+Numflow는 Express 5.x API와 완전히 호환되면서 평균 3.3배 빠른 성능을 제공하는 Node.js 웹 프레임워크입니다.
 
 [![npm version](https://img.shields.io/npm/v/numflow.svg)](https://www.npmjs.com/package/numflow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 779 passing](https://img.shields.io/badge/tests-779%20passing-brightgreen.svg)](https://github.com/gazerkr/numflow)
+[![Tests: 1018 passing](https://img.shields.io/badge/tests-1018%20passing-brightgreen.svg)](https://github.com/gazerkr/numflow)
 
 ---
 
@@ -34,18 +34,27 @@ const app = numflow()
 
 ### 고성능
 
-Radix Tree 기반 라우팅을 통해 Express 대비 평균 211% 빠른 성능을 제공합니다.
+Radix Tree 기반 라우팅을 통해 Express 대비 평균 228% 빠른 성능을 제공합니다.
 
-| 시나리오 | Express | Numflow | Fastify |
-|---------|---------|---------|---------|
-| Hello World | 15,041 req/s | 54,922 req/s | 52,191 req/s |
-| JSON Response (GET) | 14,383 req/s | 43,923 req/s | 53,043 req/s |
-| JSON Parse (POST) | 12,422 req/s | 36,682 req/s | 32,339 req/s |
-| 평균 | 14,124 req/s | 43,865 req/s | 49,030 req/s |
+| 시나리오 | Express | Numflow | Fastify | vs Express | vs Fastify |
+|---------|---------|---------|---------|-----------|-----------|
+| Hello World | 20,542 req/s | 75,626 req/s | 89,108 req/s | +268% | -15% |
+| JSON Response (GET) | 20,421 req/s | 65,574 req/s | 86,607 req/s | +221% | -24% |
+| JSON Parse (POST) | 18,151 req/s | 57,872 req/s | 51,664 req/s | +219% | +12% ⭐ |
+| Route Params (단일) | 19,790 req/s | 65,734 req/s | 84,025 req/s | +232% | -22% |
+| Route Params (복수) | 19,982 req/s | 62,387 req/s | 80,992 req/s | +212% | -23% |
+| Route + Query | 19,893 req/s | 61,988 req/s | 85,082 req/s | +212% | -27% |
+| Middleware Chain | 19,080 req/s | 63,254 req/s | 83,837 req/s | +232% | -25% |
+| **평균** | **19,694 req/s** | **64,634 req/s** | **80,188 req/s** | **+228%** | **-19%** |
 
 성능 향상:
-- Express 대비: +211% (평균 3배)
-- Fastify 대비: -11% (일부 시나리오에서 Numflow가 더 빠름)
+- Express 대비: +228% (평균 3.3배)
+- POST 요청에서는 Fastify를 능가 (+12%)
+
+**Feature-First Overhead**: 단 0.70% (거의 무시 가능)
+- Regular Route: 49,714 req/s
+- Feature (10 Steps): 49,366 req/s
+- 오버헤드: 0.70%
 
 ### Feature-First Architecture
 
@@ -164,6 +173,53 @@ features/
 - **중앙집중식 에러 처리**: `onError` 훅으로 통합 에러 처리
 - **최소 오버헤드**: 성능 오버헤드 1.02% (10 steps 기준)
 
+### WebSocket 지원
+
+Numflow는 Express와 100% 호환되는 WebSocket을 지원합니다.
+
+```javascript
+const numflow = require('numflow')
+const { WebSocketServer } = require('ws')
+
+const app = numflow()
+const server = app.listen(3000)
+
+// ws 라이브러리
+const wss = new WebSocketServer({ noServer: true })
+server.on('upgrade', (request, socket, head) => {
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit('connection', ws, request)
+  })
+})
+
+// Socket.IO도 완전 지원
+const io = require('socket.io')(server)
+io.on('connection', (socket) => {
+  socket.emit('welcome', { message: 'Connected!' })
+})
+```
+
+### ESM과 CommonJS 완전 지원
+
+Numflow는 모든 모듈 시스템을 완벽하게 지원합니다.
+
+```javascript
+// CommonJS
+const numflow = require('numflow')
+
+// ESM
+import numflow from 'numflow'
+
+// TypeScript
+import numflow from 'numflow'
+import type { Application, Request, Response } from 'numflow'
+```
+
+모든 파일 확장자 지원:
+- `.js`, `.cjs` (CommonJS)
+- `.mjs`, `.mts` (ESM)
+- `.ts` (TypeScript)
+
 ---
 
 ## 설치
@@ -248,7 +304,7 @@ const numflow = require('numflow')
 - express.static()
 
 **검증 현황:**
-- 779개 테스트 100% 통과
+- 1,018개 테스트 100% 통과
 - Express 5.x API 호환성 검증 완료
 - 주요 미들웨어 호환성 검증 완료
 
@@ -428,31 +484,27 @@ mv steps/400-create-order.js steps/450-create-order.js
 
 | 시나리오 | Express | Numflow | Fastify | vs Express | vs Fastify |
 |---------|---------|---------|---------|-----------|-----------|
-| Hello World | 15,041 | 54,922 | 52,191 | +265% | +5% |
-| JSON Response (GET) | 14,383 | 43,923 | 53,043 | +205% | -17% |
-| JSON Parse (POST) | 12,422 | 36,682 | 32,339 | +195% | +13% |
-| Route Parameters (단일) | 13,467 | 44,929 | 52,106 | +234% | -14% |
-| Route Parameters (다중) | 14,832 | 43,076 | 52,691 | +190% | -18% |
-| Route + Query | 14,404 | 42,220 | 48,525 | +193% | -13% |
-| Middleware Chain (4개) | 14,321 | 41,305 | 52,316 | +188% | -21% |
-| **평균** | **14,124** | **43,865** | **49,030** | **+211%** | **-11%** |
-
-*단위: req/s (Requests per second)*
+| Hello World | 20,542 req/s | 75,626 req/s | 89,108 req/s | +268% | -15% |
+| JSON Response (GET) | 20,421 req/s | 65,574 req/s | 86,607 req/s | +221% | -24% |
+| JSON Parse (POST) | 18,151 req/s | 57,872 req/s | 51,664 req/s | +219% | +12% ⭐ |
+| Route Params (단일) | 19,790 req/s | 65,734 req/s | 84,025 req/s | +232% | -22% |
+| Route Params (복수) | 19,982 req/s | 62,387 req/s | 80,992 req/s | +212% | -23% |
+| Route + Query | 19,893 req/s | 61,988 req/s | 85,082 req/s | +212% | -27% |
+| Middleware Chain | 19,080 req/s | 63,254 req/s | 83,837 req/s | +232% | -25% |
+| **평균** | **19,694 req/s** | **64,634 req/s** | **80,188 req/s** | **+228%** | **-19%** |
 
 ### Feature-First 성능
 
-| 시나리오 | Requests/sec | vs Regular Route |
-|---------|--------------|------------------|
-| Feature-First (10 Steps) | 35,571 | -1.02% |
-| Feature-First (50 Steps) | 28,462 | -20% |
-| Regular Route | 35,937 | baseline |
+**Feature-First Overhead**: 단 0.70% (거의 무시 가능)
+- Regular Route: 49,714 req/s
+- Feature (10 Steps): 49,366 req/s
+- 오버헤드: 0.70%
 
 ### 주요 결과
 
-- Express 대비 평균 3배 빠름 (+211%)
-- Fastify와 유사한 성능 클래스 (-11%)
-- Hello World와 JSON Parse에서 Fastify보다 빠름
-- Feature-First 오버헤드 1.02% (10 steps)
+- Express 대비 평균 3.3배 빠름 (+228%)
+- POST 요청에서는 Fastify를 능가 (+12%)
+- Feature-First 오버헤드 0.70% (10 steps)
 
 자세한 벤치마크 결과는 [PERFORMANCE.md](docs/ko/PERFORMANCE.md)를 참고하세요
 
@@ -462,7 +514,7 @@ mv steps/400-create-order.js steps/450-create-order.js
 
 ### 테스트
 
-- 779개 테스트 100% 통과
+- 1,018개 테스트 100% 통과
 - 코어 기능 테스트
 - Express 호환성 테스트
 - 미들웨어 호환성 테스트
@@ -473,7 +525,7 @@ mv steps/400-create-order.js steps/450-create-order.js
 
 - Express 5.x API 100% 호환
 - 주요 Express 미들웨어 검증 완료
-- 779개 테스트로 검증
+- 1,018개 테스트로 검증
 
 자세한 호환성 정보: [COMPATIBILITY.md](docs/ko/COMPATIBILITY.md)
 
@@ -520,7 +572,7 @@ mv steps/400-create-order.js steps/450-create-order.js
 
 **Q: Express와 100% 호환되는가?**
 
-A: 779개의 테스트로 검증했습니다. Express 5.x의 모든 핵심 API와 주요 미들웨어가 호환됩니다.
+A: 1,018개의 테스트로 검증했습니다. Express 5.x의 모든 핵심 API와 주요 미들웨어가 호환됩니다.
 
 **Q: Feature-First는 필수인가?**
 
@@ -530,9 +582,9 @@ A: 선택사항입니다. Express 방식으로만 사용해도 무방합니다.
 
 A: 아닙니다. JavaScript(CommonJS/ESM)를 완전히 지원합니다. TypeScript는 선택사항입니다.
 
-**Q: Express보다 3배 빠른 성능이 실제 환경에서도 동일한가?**
+**Q: Express보다 3.3배 빠른 성능이 실제 환경에서도 동일한가?**
 
-A: 벤치마크 결과는 평균 3배(211%)입니다. 실제 성능은 애플리케이션 구조, 미들웨어 사용, 비즈니스 로직에 따라 달라질 수 있습니다.
+A: 벤치마크 결과는 평균 3.3배(228%)입니다. 실제 성능은 애플리케이션 구조, 미들웨어 사용, 비즈니스 로직에 따라 달라질 수 있습니다.
 
 **Q: Fastify와의 차이점은?**
 

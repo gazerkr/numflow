@@ -1,5 +1,17 @@
 # Getting Started with Numflow
 
+## Table of Contents
+
+- [📑 Table of Contents](#table-of-contents)
+  - [Getting Started](#getting-started)
+  - [Core Features](#core-features)
+  - [Advanced Features](#advanced-features)
+  - [Development Environment](#development-environment)
+- [Quick Start](#quick-start)
+- [Next Steps](#next-steps)
+
+---
+
 A step-by-step guide to getting started with the Numflow framework.
 
 > **Note**: This document includes only currently implemented features and will be updated as new features are added.

@@ -1,5 +1,23 @@
 # Installation & First Application
 
+## Table of Contents
+
+- [Installation](#installation)
+  - [Requirements](#requirements)
+  - [Package Installation](#package-installation)
+- [First Application](#first-application)
+  - [JavaScript (CommonJS)](#javascript-commonjs)
+  - [JavaScript (ESM)](#javascript-esm)
+- [Choosing a Module System](#choosing-a-module-system)
+  - [CommonJS Approach](#commonjs-approach)
+  - [ESM Approach](#esm-approach)
+- [Server Configuration](#server-configuration)
+  - [Storing and Retrieving Settings](#storing-and-retrieving-settings)
+  - [Chaining](#chaining)
+  - [Common Configuration Items](#common-configuration-items)
+
+---
+
 ## Installation
 
 ### Requirements

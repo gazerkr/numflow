@@ -1,5 +1,23 @@
 # Architecture 설계
 
+## 목차
+
+- [개요](#개요)
+- [설계 원칙](#설계-원칙)
+- [시스템 아키텍처](#시스템-아키텍처)
+- [핵심 컴포넌트](#핵심-컴포넌트)
+- [High-Performance Router 아키텍처](#high-performance-router-아키텍처)
+- [성능 최적화 전략](#성능-최적화-전략)
+- [Express 호환성 구현](#express-호환성-구현)
+- [에러 처리 아키텍처](#에러-처리-아키텍처)
+- [TypeScript 타입 시스템](#typescript-타입-시스템)
+- [JavaScript 개발자 지원](#javascript-개발자-지원)
+- [플러그인 시스템](#플러그인-시스템)
+- [확장 포인트](#확장-포인트)
+- [보안 고려사항](#보안-고려사항)
+- [Feature-First Auto-Orchestration](#feature-first-auto-orchestration-)
+- [Feature Debug Mode](#feature-debug-mode-)
+
 ## 개요
 
 Numflow는 Express.js와 완전히 호환되면서도 성능을 크게 향상시킨 Node.js 웹 프레임워크입니다.
@@ -1924,11 +1942,26 @@ FEATURE_DEBUG=true node server.js
 
 ---
 
-**마지막 업데이트**: 2025-10-21
+**마지막 업데이트**: 2025-11-15
 
 **핵심 차별화**:
-- Radix Tree Router (10-100배 빠른 라우팅)
+- Radix Tree Router (Express 대비 228% 성능 향상)
 - Auto-orchestration (숫자 기반 자동 실행)
 - 데이터베이스 독립적 에러 처리 (사용자 제어)
 - 중복 라우트 자동 검증 (서버 시작 시)
 - JavaScript 완전 지원 (TypeScript는 선택사항)
+- WebSocket 지원 (ws, Socket.IO 완전 호환)
+- Subpath Imports 지원 (깔끔한 import 경로)
+- ESM과 CommonJS 완전 지원
+
+**최신 성능 지표** (2025-11-15):
+- Express 대비: **+228%** (64,634 vs 19,694 req/s)
+- Fastify 대비: **-19%** (80,188 req/s가 약간 빠름)
+- POST 요청: **Fastify 능가 +12%** (57,872 vs 51,664 req/s)
+- Feature-First 오버헤드: **0.70%** (무시 가능)
+- Latency: **1.09ms** (Express의 1/4 수준)
+
+**테스트 통과율** (2025-11-15):
+- Test Suites: 55 passed, 55 total
+- Tests: 1018 passed, 1032 total (14 skipped)
+- Coverage: 높은 커버리지

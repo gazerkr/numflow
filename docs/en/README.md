@@ -2,6 +2,13 @@
 
 Express.js-compatible high-performance Node.js web framework
 
+## Table of Contents
+
+- [Documentation Structure](#-documentation-structure)
+- [Project Goals](#-project-goals)
+- [Documentation Guide](#-documentation-guide)
+- [Last Updated](#-last-updated)
+
 ## 📚 Documentation Structure
 
 ### Getting Started
@@ -37,9 +44,17 @@ Express.js-compatible high-performance Node.js web framework
 ## 🎯 Project Goals
 
 1. **Full Express Compatibility** - Use existing Express middleware/plugins as-is
-2. **High Performance** - 211% faster than Express on average (3x performance)
+2. **High Performance** - **228% faster than Express** on average (3.3x performance)
 3. **TypeScript Native** - Perfect type inference support
 4. **Centralized Error Handling** - Automatic error handling without try-catch
+
+### Latest Benchmark Results (2025-11-15)
+
+- **vs Express**: +228% performance improvement (avg 64,634 req/s vs 19,694 req/s)
+- **vs Fastify**: -19% (Fastify is slightly faster, avg 80,188 req/s)
+- **POST requests**: Surpasses Fastify +12% (57,872 vs 51,664 req/s)
+- **Feature-First overhead**: 0.70% (negligible)
+- **Latency**: 1.09ms (1/4 of Express)
 
 ## 📖 Documentation Guide
 
@@ -62,4 +77,5 @@ Express.js-compatible high-performance Node.js web framework
 
 ## 📅 Last Updated
 
+- 2025-11-15: Latest benchmark results and test pass rates added
 - 2025-11-11: Documentation structure reorganization (production ready)

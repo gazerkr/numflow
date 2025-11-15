@@ -2,11 +2,11 @@
 
 > High-performance Node.js web framework with Express 5.x compatibility
 
-Numflow is a Node.js web framework that is fully compatible with Express 5.x API while providing 3x faster performance on average.
+Numflow is a Node.js web framework that is fully compatible with Express 5.x API while providing 3.3x faster performance on average.
 
 [![npm version](https://img.shields.io/npm/v/numflow.svg)](https://www.npmjs.com/package/numflow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 779 passing](https://img.shields.io/badge/tests-779%20passing-brightgreen.svg)](https://github.com/gazerkr/numflow)
+[![Tests: 1018 passing](https://img.shields.io/badge/tests-1018%20passing-brightgreen.svg)](https://github.com/gazerkr/numflow)
 
 ---
 
@@ -34,18 +34,27 @@ Use existing Express code and middleware without any modifications:
 
 ### High Performance
 
-Radix Tree-based routing provides 211% faster performance compared to Express on average.
+Radix Tree-based routing provides 228% faster performance compared to Express on average.
 
-| Scenario | Express | Numflow | Fastify |
-|---------|---------|---------|---------|
-| Hello World | 15,041 req/s | 54,922 req/s | 52,191 req/s |
-| JSON Response (GET) | 14,383 req/s | 43,923 req/s | 53,043 req/s |
-| JSON Parse (POST) | 12,422 req/s | 36,682 req/s | 32,339 req/s |
-| Average | 14,124 req/s | 43,865 req/s | 49,030 req/s |
+| Scenario | Express | Numflow | Fastify | vs Express | vs Fastify |
+|---------|---------|---------|---------|-----------|-----------|
+| Hello World | 20,542 req/s | 75,626 req/s | 89,108 req/s | +268% | -15% |
+| JSON Response (GET) | 20,421 req/s | 65,574 req/s | 86,607 req/s | +221% | -24% |
+| JSON Parse (POST) | 18,151 req/s | 57,872 req/s | 51,664 req/s | +219% | +12% ⭐ |
+| Route Params (single) | 19,790 req/s | 65,734 req/s | 84,025 req/s | +232% | -22% |
+| Route Params (multiple) | 19,982 req/s | 62,387 req/s | 80,992 req/s | +212% | -23% |
+| Route + Query | 19,893 req/s | 61,988 req/s | 85,082 req/s | +212% | -27% |
+| Middleware Chain | 19,080 req/s | 63,254 req/s | 83,837 req/s | +232% | -25% |
+| **Average** | **19,694 req/s** | **64,634 req/s** | **80,188 req/s** | **+228%** | **-19%** |
 
 Performance improvements:
-- vs Express: +211% (3x faster on average)
-- vs Fastify: -11% (Numflow is faster in some scenarios)
+- vs Express: +228% (3.3x faster on average)
+- Outperforms Fastify on POST requests (+12%)
+
+**Feature-First Overhead**: Only 0.70% (negligible)
+- Regular Route: 49,714 req/s
+- Feature (10 Steps): 49,366 req/s
+- Overhead: 0.70%
 
 ### Feature-First Architecture
 
@@ -164,6 +173,53 @@ features/
 - **Centralized Error Handling**: Unified error handling with `onError` hook
 - **Minimal Overhead**: 1.02% performance overhead (based on 10 steps)
 
+### WebSocket Support
+
+Numflow supports WebSocket with 100% Express compatibility.
+
+```javascript
+const numflow = require('numflow')
+const { WebSocketServer } = require('ws')
+
+const app = numflow()
+const server = app.listen(3000)
+
+// ws library
+const wss = new WebSocketServer({ noServer: true })
+server.on('upgrade', (request, socket, head) => {
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit('connection', ws, request)
+  })
+})
+
+// Socket.IO fully supported
+const io = require('socket.io')(server)
+io.on('connection', (socket) => {
+  socket.emit('welcome', { message: 'Connected!' })
+})
+```
+
+### Full ESM and CommonJS Support
+
+Numflow perfectly supports all module systems.
+
+```javascript
+// CommonJS
+const numflow = require('numflow')
+
+// ESM
+import numflow from 'numflow'
+
+// TypeScript
+import numflow from 'numflow'
+import type { Application, Request, Response } from 'numflow'
+```
+
+All file extensions supported:
+- `.js`, `.cjs` (CommonJS)
+- `.mjs`, `.mts` (ESM)
+- `.ts` (TypeScript)
+
 ---
 
 ## Installation
@@ -248,7 +304,7 @@ The rest of your code works without modification.
 - express.static()
 
 **Verification status:**
-- 779 tests passing 100%
+- 1,018 tests passing 100%
 - Express 5.x API compatibility verified
 - Major middleware compatibility verified
 
@@ -428,31 +484,27 @@ mv steps/400-create-order.js steps/450-create-order.js
 
 | Scenario | Express | Numflow | Fastify | vs Express | vs Fastify |
 |---------|---------|---------|---------|-----------|-----------|
-| Hello World | 15,041 | 54,922 | 52,191 | +265% | +5% |
-| JSON Response (GET) | 14,383 | 43,923 | 53,043 | +205% | -17% |
-| JSON Parse (POST) | 12,422 | 36,682 | 32,339 | +195% | +13% |
-| Route Parameters (single) | 13,467 | 44,929 | 52,106 | +234% | -14% |
-| Route Parameters (multiple) | 14,832 | 43,076 | 52,691 | +190% | -18% |
-| Route + Query | 14,404 | 42,220 | 48,525 | +193% | -13% |
-| Middleware Chain (4) | 14,321 | 41,305 | 52,316 | +188% | -21% |
-| **Average** | **14,124** | **43,865** | **49,030** | **+211%** | **-11%** |
-
-*Unit: req/s (Requests per second)*
+| Hello World | 20,542 req/s | 75,626 req/s | 89,108 req/s | +268% | -15% |
+| JSON Response (GET) | 20,421 req/s | 65,574 req/s | 86,607 req/s | +221% | -24% |
+| JSON Parse (POST) | 18,151 req/s | 57,872 req/s | 51,664 req/s | +219% | +12% ⭐ |
+| Route Params (single) | 19,790 req/s | 65,734 req/s | 84,025 req/s | +232% | -22% |
+| Route Params (multiple) | 19,982 req/s | 62,387 req/s | 80,992 req/s | +212% | -23% |
+| Route + Query | 19,893 req/s | 61,988 req/s | 85,082 req/s | +212% | -27% |
+| Middleware Chain | 19,080 req/s | 63,254 req/s | 83,837 req/s | +232% | -25% |
+| **Average** | **19,694 req/s** | **64,634 req/s** | **80,188 req/s** | **+228%** | **-19%** |
 
 ### Feature-First Performance
 
-| Scenario | Requests/sec | vs Regular Route |
-|---------|--------------|------------------|
-| Feature-First (10 Steps) | 35,571 | -1.02% |
-| Feature-First (50 Steps) | 28,462 | -20% |
-| Regular Route | 35,937 | baseline |
+**Feature-First Overhead**: Only 0.70% (negligible)
+- Regular Route: 49,714 req/s
+- Feature (10 Steps): 49,366 req/s
+- Overhead: 0.70%
 
 ### Key Results
 
-- 3x faster than Express on average (+211%)
-- Similar performance class to Fastify (-11%)
-- Faster than Fastify in Hello World and JSON Parse
-- Feature-First overhead 1.02% (10 steps)
+- 3.3x faster than Express on average (+228%)
+- Outperforms Fastify on POST requests (+12%)
+- Feature-First overhead 0.70% (10 steps)
 
 For detailed benchmark results, see [PERFORMANCE.md](docs/en/PERFORMANCE.md)
 
@@ -462,7 +514,7 @@ For detailed benchmark results, see [PERFORMANCE.md](docs/en/PERFORMANCE.md)
 
 ### Tests
 
-- 779 tests passing 100%
+- 1,018 tests passing 100%
 - Core functionality tests
 - Express compatibility tests
 - Middleware compatibility tests
@@ -473,7 +525,7 @@ For detailed benchmark results, see [PERFORMANCE.md](docs/en/PERFORMANCE.md)
 
 - Express 5.x API 100% compatible
 - Major Express middleware verified
-- Validated with 779 tests
+- Validated with 1,018 tests
 
 Detailed compatibility info: [COMPATIBILITY.md](docs/en/COMPATIBILITY.md)
 
@@ -520,7 +572,7 @@ Issue reports, feature suggestions, documentation improvements, and code contrib
 
 **Q: Is it 100% compatible with Express?**
 
-A: Verified with 779 tests. All core APIs and major middleware of Express 5.x are compatible.
+A: Verified with 1,018 tests. All core APIs and major middleware of Express 5.x are compatible.
 
 **Q: Is Feature-First mandatory?**
 
@@ -530,9 +582,9 @@ A: It's optional. You can use it with Express-style only.
 
 A: No. JavaScript (CommonJS/ESM) is fully supported. TypeScript is optional.
 
-**Q: Is the 3x faster performance the same in production environments?**
+**Q: Is the 3.3x faster performance the same in production environments?**
 
-A: Benchmark results show 3x (211%) on average. Actual performance may vary depending on application structure, middleware usage, and business logic.
+A: Benchmark results show 3.3x (228%) on average. Actual performance may vary depending on application structure, middleware usage, and business logic.
 
 **Q: What's the difference from Fastify?**
 

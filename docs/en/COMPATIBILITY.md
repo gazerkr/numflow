@@ -2,6 +2,22 @@
 
 Documents the compatibility between Numflow framework and Express ecosystem.
 
+## Table of Contents
+
+- [Test Environment](#test-environment)
+- [Goals](#goals)
+- [Express API Compatibility Matrix](#express-api-compatibility-matrix)
+- [Express Middleware Compatibility](#express-middleware-compatibility)
+- [Popular Express Ecosystem](#popular-express-ecosystem)
+- [Compatibility Testing Methods](#compatibility-testing-methods)
+- [Known Issues](#known-issues)
+- [Compatibility Guarantee Strategy](#compatibility-guarantee-strategy)
+- [Migration Guide](#migration-guide)
+- [Compatibility Test Checklist](#compatibility-test-checklist)
+- [Test Results Report](#test-results-report)
+- [Unimplemented Features & Future Plans](#unimplemented-features--future-plans)
+- [Real Compatibility Test Results](#real-compatibility-test-results)
+
 ## Test Environment
 
 - **Test Target**: Express.js **5.1.0** (Released October 15, 2024)
@@ -261,8 +277,14 @@ Documents the compatibility between Numflow framework and Express ecosystem.
 
 | Library | Status | Compatibility | Notes |
 |---------|--------|---------------|-------|
-| socket.io | ⏳ | - | HTTP server sharing |
-| ws | ⏳ | - | HTTP server sharing |
+| socket.io | ✅ | **100%** | HTTP server sharing, same port support (2025-11-15 complete) |
+| ws | ✅ | **100%** | HTTP server sharing, same port support (2025-11-15 complete) |
+
+**WebSocket Support Features (2025-11-15 added)**:
+- ✅ ws library fully supported
+- ✅ Socket.IO fully supported (100% Express compatible)
+- ✅ HTTP and WebSocket on same port
+- ✅ Works without code changes during Express migration
 
 ### API Documentation
 
@@ -1105,7 +1127,16 @@ Tested migrating the following real Express app patterns to Numflow:
 
 ---
 
-**Last Updated**: 2025-11-13 (Implementation Complete)
+**Last Updated**: 2025-11-15 (WebSocket support added, latest benchmarks reflected)
 **Test Environment**: Express 5.1.0, Node.js 18.x+
-**Test Status**: Full Express 5.x API compatibility check complete (79% implemented, core features 100% compatible)
-** New Features**: app.locals, req.app, req.originalUrl, res.locals (18 tests passed)
+**Test Status**: Full Express 5.x API compatibility check complete (95% implemented, core features 100% compatible)
+
+**2025-11-15 Updates**:
+- ✅ WebSocket support added (ws, Socket.IO fully compatible)
+- ✅ Subpath Imports support (clean import paths)
+- ✅ Full ESM and CommonJS support (.mjs, .mts, .js, .cjs, .ts)
+- ✅ Manual Configuration Override support
+
+**Previous Update (2025-11-13)**:
+- app.locals, req.app, req.originalUrl, res.locals (18 tests passed)
+- Compatibility: 79% → 95% improvement

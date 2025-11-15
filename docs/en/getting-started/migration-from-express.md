@@ -1,5 +1,52 @@
 # Migrating from Express to Numflow
 
+## Table of Contents
+
+- [📊 Compatibility Summary](#compatibility-summary)
+- [🚀 Quick Migration (3 Steps)](#quick-migration-3-steps)
+  - [Step 1: Install Package](#step-1-install-package)
+  - [Step 2: Change Import](#step-2-change-import)
+  - [Step 3: Test and Run](#step-3-test-and-run)
+- [💯 Fully Compatible Features](#fully-compatible-features)
+  - [✅ Routing](#routing)
+  - [✅ Middleware](#middleware)
+  - [✅ Request Object](#request-object)
+  - [✅ Response Object](#response-object)
+  - [✅ Router](#router)
+  - [✅ Express Middleware](#express-middleware)
+- [⚠️ Unimplemented Features & Alternatives](#unimplemented-features-alternatives)
+  - [1. express.static() - Static File Serving](#1-expressstatic-static-file-serving)
+  - [2. app.locals - Global Template Variables](#2-applocals-global-template-variables)
+  - [3. app.param() - Route Parameter Middleware](#3-appparam-route-parameter-middleware)
+  - [4. req.app, req.baseUrl, req.originalUrl - Debugging Properties](#4-reqapp-reqbaseurl-reqoriginalurl-debugging-properties)
+  - [5. res.format() - Content-Type Negotiation Response](#5-resformat-content-type-negotiation-response)
+  - [6. Other Unimplemented Features](#6-other-unimplemented-features)
+- [📝 Real-World Migration Example](#real-world-migration-example)
+  - [Before: Express Application](#before-express-application)
+  - [After: Numflow Application](#after-numflow-application)
+- [🔄 Router File Migration](#router-file-migration)
+  - [Before: Express Router](#before-express-router)
+  - [After: Numflow Router](#after-numflow-router)
+- [✅ Migration Checklist](#migration-checklist)
+  - [Step 1: Preparation](#step-1-preparation)
+  - [Step 2: Code Changes](#step-2-code-changes)
+  - [Step 3: Replace Unimplemented Features](#step-3-replace-unimplemented-features)
+  - [Step 4: Testing](#step-4-testing)
+  - [Step 5: Deployment](#step-5-deployment)
+- [📊 Performance Comparison After Migration](#performance-comparison-after-migration)
+- [💡 Migration Tips](#migration-tips)
+  - [1. Gradual Migration](#1-gradual-migration)
+  - [2. Check Test Coverage](#2-check-test-coverage)
+  - [3. Performance Monitoring](#3-performance-monitoring)
+- [🆘 Troubleshooting](#troubleshooting)
+  - [Q1: Tests fail after migration](#q1-tests-fail-after-migration)
+  - [Q2: Middleware using express.static() doesn't work](#q2-middleware-using-expressstatic-doesnt-work)
+  - [Q3: Body parser doesn't work](#q3-body-parser-doesnt-work)
+- [📚 Additional Resources](#additional-resources)
+- [🎯 Conclusion](#conclusion)
+
+---
+
 Complete guide to migrating your Express application to Numflow.
 
 > **Key Message**: Numflow is **99% compatible** with Express, so you can use most of your code as-is. Just change the import statement and immediately experience **3x faster performance**!

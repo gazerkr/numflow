@@ -1,5 +1,15 @@
 # Using TypeScript
 
+## Table of Contents
+
+- [1. Install TypeScript](#1-install-typescript)
+- [2. Create tsconfig.json](#2-create-tsconfigjson)
+- [3. Write TypeScript Application](#3-write-typescript-application)
+- [4. Build and Run](#4-build-and-run)
+- [5. Development Mode (ts-node)](#5-development-mode-ts-node)
+
+---
+
 Numflow fully supports TypeScript.
 
 ## 1. Install TypeScript

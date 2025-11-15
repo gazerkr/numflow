@@ -847,4 +847,44 @@ numflow.feature({
 
 ---
 
-*Last updated: 2025-10-21 (Removed hot reload references - use external tools like nodemon instead)*
+## Latest Performance Metrics (2025-11-15)
+
+- **vs Express**: **+228%** (64,634 vs 19,694 req/s)
+- **vs Fastify**: **-19%** (80,188 req/s slightly faster)
+- **POST requests**: **Surpasses Fastify +12%** (57,872 vs 51,664 req/s)
+- **Feature-First overhead**: **0.70%** (negligible)
+- **Latency**: **1.09ms** (1/4 of Express)
+
+## Test Pass Rates (2025-11-15)
+
+- **Test Suites**: 55 passed, 55 total
+- **Tests**: 1018 passed, 1032 total (14 skipped)
+- **Coverage**: High coverage
+
+## New Features (2025-11-15)
+
+### WebSocket Support
+- ✅ ws library fully supported (100% Express compatible)
+- ✅ Socket.IO fully supported (100% Express compatible)
+- ✅ HTTP and WebSocket on same port
+- ✅ Works without code changes during Express migration
+
+### Subpath Imports Support
+- ✅ Clean import paths using Node.js Subpath Imports
+- ✅ Solves deep path issues in Feature-First architecture
+
+### Full ESM and CommonJS Support
+- ✅ ESM (.mjs, .mts)
+- ✅ CommonJS (.js, .cjs)
+- ✅ TypeScript (.ts)
+- ✅ Perfect operation in all environments
+
+### Manual Configuration Override
+- ✅ Convention over Configuration as default
+- ✅ Manual override when needed
+- ✅ method, path, steps, asyncTasks all support manual configuration
+
+---
+
+*Last updated: 2025-11-15 (Added latest performance metrics and new features)*
+*Previous update: 2025-10-21 (Removed hot reload references - use external tools like nodemon instead)*

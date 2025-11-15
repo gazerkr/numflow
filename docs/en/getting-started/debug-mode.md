@@ -1,22 +1,45 @@
 # Debug Mode 🐛
 
-Numflow's Debug Mode is a powerful debugging tool that visually tracks the execution flow of Feature-First Auto-Orchestration.
+## Table of Contents
 
-> **Note**: Debug Mode only works with Feature-First pattern. It does not work with regular routes.
+- [📑 Table of Contents](#table-of-contents)
+- [What is Debug Mode?](#what-is-debug-mode)
+  - [Key Features](#key-features)
+- [Why Do You Need It?](#why-do-you-need-it)
+- [Enable/Disable](#enabledisable)
+  - [Default State (Disabled)](#default-state-disabled)
+  - [How to Enable](#how-to-enable)
+  - [Other Log Controls](#other-log-controls)
+- [Output Format](#output-format)
+  - [Success Case](#success-case)
+  - [Error Case](#error-case)
+  - [Output Elements](#output-elements)
+- [Context Tracking](#context-tracking)
+  - [Input vs Context](#input-vs-context)
+  - [Example: Tracking Context Flow](#example-tracking-context-flow)
+- [Real-World Examples](#real-world-examples)
+  - [Example 1: Order Creation Debugging](#example-1-order-creation-debugging)
+  - [Example 2: Finding Performance Bottlenecks](#example-2-finding-performance-bottlenecks)
+- [Log Control](#log-control)
+  - [Environment Variables](#environment-variables)
+  - [Scenario-Specific Settings](#scenario-specific-settings)
+- [Performance Considerations](#performance-considerations)
+  - [Context Snapshot Overhead](#context-snapshot-overhead)
+  - [Context Size Limit](#context-size-limit)
+  - [Production Recommendations](#production-recommendations)
+- [Best Practices](#best-practices)
+  - [1. Context Design](#1-context-design)
+  - [2. Store Meaningful Results](#2-store-meaningful-results)
+  - [3. Clear Error Messages](#3-clear-error-messages)
+  - [4. Optimize Step Execution Time](#4-optimize-step-execution-time)
+  - [5. Development vs Production](#5-development-vs-production)
+- [Next Steps](#next-steps)
 
 ---
 
-## 📑 Table of Contents
+Numflow's Debug Mode is a powerful debugging tool that visually tracks the execution flow of Feature-First Auto-Orchestration.
 
-- [What is Debug Mode?](#what-is-debug-mode)
-- [Why Do You Need It?](#why-do-you-need-it)
-- [Enable/Disable](#enabledisable)
-- [Output Format](#output-format)
-- [Context Tracking](#context-tracking)
-- [Real-World Examples](#real-world-examples)
-- [Log Control](#log-control)
-- [Performance Considerations](#performance-considerations)
-- [Best Practices](#best-practices)
+> **Note**: Debug Mode only works with Feature-First pattern. It does not work with regular routes.
 
 ---
 

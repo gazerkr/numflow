@@ -1,5 +1,16 @@
 # Project Structure
 
+## Table of Contents
+
+- [Choose Structure Pattern](#choose-structure-pattern)
+  - [1. Basic Structure (Small Scale)](#1-basic-structure-small-scale)
+  - [2. 3-Layer Architecture (Medium Scale) ⭐ Recommended](#2-3-layer-architecture-medium-scale-recommended)
+  - [3. Feature-First Architecture (Large Scale) ⭐ NEW](#3-feature-first-architecture-large-scale-new)
+- [Detailed Guides](#detailed-guides)
+- [Quick Start Example](#quick-start-example)
+
+---
+
 As your application grows, you need a good project structure.
 
 ## Choose Structure Pattern
