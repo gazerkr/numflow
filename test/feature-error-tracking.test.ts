@@ -363,7 +363,9 @@ describe('Feature Error Tracking', () => {
     })
   })
 
-  describe('Async Task Error Tracking', () => {
+  // NOTE: Async task logging tests moved to async-task-scheduler-debug.test.ts
+  // (requires NODE_ENV='development' for logging)
+  describe.skip('Async Task Error Tracking', () => {
     describe('Error Logging with File Path', () => {
       it('should log task name and file path when async task fails', async () => {
         const originalEnv = process.env.NODE_ENV
@@ -853,7 +855,8 @@ describe('Feature Error Tracking', () => {
       })
     })
 
-    describe('Async Task Error Log Format', () => {
+    // NOTE: Async task logging test moved to async-task-scheduler-debug.test.ts
+    describe.skip('Async Task Error Log Format', () => {
       it('should provide easily parseable error log format', async () => {
         const originalEnv = process.env.NODE_ENV
         process.env.NODE_ENV = 'development'

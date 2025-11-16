@@ -1101,152 +1101,98 @@ AutoExecutor automatically logs execution status for each step.
 [AutoExecutor] [POST /api/orders] ERROR: Step 100 failed: Order must have items
 ```
 
-### Disable Logs
+### Log Control
 
-Disable Feature logs in production or specific environments.
+Feature logs are automatically controlled based on environment, with manual override options.
 
-**Method 1: Environment Variable**
+#### Logging Rules
+
+**Simple 3 rules:**
+
+1. ❌ **Test environment**: Always OFF (clean test output)
+2. ✅ **Explicit control**: `FEATURE_LOGS=true/false` (highest priority)
+3. ✅ **Default behavior**: `development` ON, `production` OFF
+
+#### Logging Conditions Table
+
+| Environment | FEATURE_LOGS | Logs | Description |
+|-------------|-------------|------|-------------|
+| **test** | (ignored) | ❌ | Always OFF in tests |
+| **development** | (not set) | ✅ **ON** | Default for dev |
+| **development** | `false` | ❌ | Explicitly disable |
+| **production** | (not set) | ❌ | Default for prod |
+| **production** | `true` | ✅ **ON** | Debug mode |
+
+#### Usage Examples
+
+**Scenario 1: Local Development (auto-enabled logs)**
 ```bash
-# Disable logs
-DISABLE_FEATURE_LOGS=true node app.js
-
-# Or in .env file
-DISABLE_FEATURE_LOGS=true
+# No configuration needed → logs auto-enabled
+npm run dev
 ```
 
-**Method 2: Auto-disable in Test Environment**
+**Scenario 2: Disable logs in development**
 ```bash
-# Automatically disabled when NODE_ENV=test
-NODE_ENV=test npm test
+# Explicitly disable with FEATURE_LOGS=false
+FEATURE_LOGS=false npm run dev
 ```
 
-**package.json Scripts:**
+**Scenario 3: Production Debugging**
+```bash
+# Explicitly enable with FEATURE_LOGS=true
+NODE_ENV=production FEATURE_LOGS=true node app.js
+```
+
+**Scenario 4: Testing**
+```bash
+# Always OFF (clean test output)
+npm test
+```
+
+#### package.json Scripts Example
+
 ```json
 {
   "scripts": {
     "start": "node app.js",
-    "start:silent": "DISABLE_FEATURE_LOGS=true node app.js",
-    "test": "NODE_ENV=test jest"
+    "dev": "node app.js",                          // development: logs ON
+    "dev:quiet": "FEATURE_LOGS=false node app.js", // disable logs
+    "start:prod": "NODE_ENV=production node app.js", // production: logs OFF
+    "prod:debug": "NODE_ENV=production FEATURE_LOGS=true node app.js", // production debug
+    "test": "NODE_ENV=test jest"                   // test: always OFF
   }
 }
 ```
 
----
+#### Docker Environment Example
 
-## Debug Mode
-
-Debug Mode visualizes step execution flow and tracks context changes for easier debugging.
-
-> **Note**: Debug Mode only works with Feature-First pattern. For complete documentation, see [Debug Mode Guide](../guides/debug-mode.md).
-
-### Enable Debug Mode
-
-Debug Mode is **disabled by default**. Enable it when debugging is needed:
-
-```bash
-# Method 1: Environment variable
-FEATURE_DEBUG=true node app.js
-
-# Method 2: .env file
-echo "FEATURE_DEBUG=true" >> .env
-node app.js
-
-# Method 3: package.json script
-{
-  "scripts": {
-    "dev": "FEATURE_DEBUG=true node app.js",  // Dev (Debug Mode enabled)
-    "start": "node app.js"                     // Production (disabled)
-  }
-}
+```dockerfile
+# Dockerfile (production - logs OFF)
+FROM node:20-alpine
+ENV NODE_ENV=production
+# No FEATURE_LOGS → defaults to OFF
+CMD ["node", "app.js"]
 ```
 
-### Debug Output Example
-
-**Success Case:**
-```bash
-[Feature] POST /api/orders
-  [Step 100] validate-order (2ms) ✓
-    ├─ Input: {"userId":1,"orderData":{"items":[...]}}
-    └─ Context: {"validation":{"isValid":true,"itemCount":1}}
-
-  [Step 200] create-order (15ms) ✓
-    ├─ Input: {"userId":1,"orderData":{...}}
-    └─ Context: {"order":{"orderId":"12345","status":"created"}}
-
-  [Summary]
-    Total: 17ms
-    Steps: 2/2 passed
-    Status: ✓ Success
+```dockerfile
+# Dockerfile (production debug - logs ON)
+FROM node:20-alpine
+ENV NODE_ENV=production
+ENV FEATURE_LOGS=true
+CMD ["node", "app.js"]
 ```
 
-**Error Case:**
-```bash
-[Feature] POST /api/orders
-  [Step 100] validate-order (2ms) ✗
-    ├─ Input: {"userId":1,"orderData":{"items":[]}}
-    └─ Error: Order must have items
-
-  [Summary]
-    Total: 2ms
-    Steps: 0/1 passed
-    Status: ✗ Failed
-    Error: Order must have items
-```
-
-### Key Features
-
-1. **Step-by-Step Tracking**
-   - Execution time for each step (milliseconds)
-   - Success/Failure indicator (✓/✗)
-   - Input state before step execution
-   - Context changes after step execution
-
-2. **Performance Profiling**
-   - Easily identify slow steps
-   - Total execution time
-   - Step-by-step timing breakdown
-
-3. **Context Flow Visualization**
-   - See how data flows between steps
-   - Track what each step adds to context
-   - Identify where data gets lost or corrupted
-
-### Environment Variables
+#### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `FEATURE_DEBUG` | `false` | Set to `true` to enable detailed step-by-step debug output |
-| `DISABLE_FEATURE_LOGS` | `false` | Set to `true` to disable all Feature logs (overrides DEBUG) |
-| `NODE_ENV` | - | Automatically disables all logs when set to `test` |
+| `FEATURE_LOGS` | (not set) | `true`: Force ON, `false`: Force OFF |
+| `NODE_ENV` | - | `development`: Default ON, `production`: Default OFF, `test`: Always OFF |
 
-### Performance Impact
+#### Performance Optimization
 
-Debug Mode has **minimal performance overhead** (approximately 2-3%):
+Log control is evaluated **only once at class load time**, resulting in **virtually zero performance overhead** (< 0.01%).
 
-- Debug Mode OFF: 42,104 req/s
-- Debug Mode ON: ~41,000 req/s
-
-**Recommendation**: Keep disabled in production environments.
-
-### Best Practices
-
-```javascript
-// ✅ Good: Enable in development
-{
-  "scripts": {
-    "dev": "FEATURE_DEBUG=true node app.js",
-    "start": "node app.js"
-  }
-}
-
-// ✅ Good: Use for debugging specific features
-FEATURE_DEBUG=true node app.js
-
-// ❌ Bad: Enable in production
-// Performance overhead and may expose sensitive data in logs
-```
-
-For complete documentation, examples, and advanced usage, see the **[Debug Mode Guide](../guides/debug-mode.md)**.
 
 ---
 

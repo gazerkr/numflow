@@ -38,11 +38,43 @@ export class AutoExecutor {
   /**
    * Debug mode caching (performance optimization)
    * Check environment variable only once at class load instead of every step
+   *
+   * Logging policy (simple rules):
+   *
+   * 1. Test environment: Always OFF (for clean test output)
+   *    - NODE_ENV=test → No logs
+   *
+   * 2. Explicit control (highest priority):
+   *    - FEATURE_LOGS=true → Force ON (any environment except test)
+   *    - FEATURE_LOGS=false → Force OFF (any environment)
+   *
+   * 3. Default behavior (when FEATURE_LOGS not set):
+   *    - development → ON (helpful for debugging)
+   *    - production → OFF (clean production logs)
+   *
+   * Examples:
+   * - Local dev: (no env vars) → Logs ON
+   * - Local dev (quiet): FEATURE_LOGS=false → Logs OFF
+   * - Production debug: FEATURE_LOGS=true → Logs ON
+   * - Production normal: (no env vars) → Logs OFF
    */
-  private static readonly isDebugMode =
-    process.env.FEATURE_DEBUG === 'true' &&
-    process.env.DISABLE_FEATURE_LOGS !== 'true' &&
-    process.env.NODE_ENV !== 'test'
+  private static readonly isDebugMode = (() => {
+    // Test environment: always OFF
+    if (process.env.NODE_ENV === 'test') {
+      return false
+    }
+
+    // Explicit control (highest priority)
+    if (process.env.FEATURE_LOGS === 'true') {
+      return true
+    }
+    if (process.env.FEATURE_LOGS === 'false') {
+      return false
+    }
+
+    // Default: ON in development, OFF in production
+    return process.env.NODE_ENV === 'development'
+  })()
 
   constructor(options: AutoExecutionOptions) {
     this.options = options

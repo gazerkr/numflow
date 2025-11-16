@@ -1808,38 +1808,64 @@ Feature 실행 중 AutoExecutor는 각 step의 실행 상태를 자동으로 로
 [AutoExecutor] [POST /api/orders] ERROR: Step 100 failed: 주문 상품이 없습니다
 ```
 
-### 로그 비활성화하기
+### 로그 제어하기
 
-프로덕션 환경에서는 Feature 로그를 비활성화할 수 있습니다.
+Feature 로그는 환경에 따라 자동으로 제어되며, 필요시 수동으로 켜거나 끌 수 있습니다.
 
-**환경변수 설정:**
+#### 📊 로그 출력 규칙 (간단명료)
 
+| 환경 | FEATURE_LOGS | 로그 출력 | 설명 |
+|------|-------------|----------|------|
+| **test** | (무시됨) | ❌ | 테스트는 항상 로그 OFF |
+| **development** | (미설정) | ✅ | 개발 환경 기본값 |
+| **development** | `false` | ❌ | 명시적으로 끄기 |
+| **production** | (미설정) | ❌ | 프로덕션 기본값 |
+| **production** | `true` | ✅ | 디버깅 모드 |
+
+#### 사용 예시
+
+**1. 로컬 개발 (로그 자동 출력)**
 ```bash
-# 프로덕션 환경
-DISABLE_FEATURE_LOGS=true node app.js
-
-# 또는 .env 파일
-DISABLE_FEATURE_LOGS=true
+# 아무것도 설정 안 함 → 로그 자동 출력
+npm run dev
 ```
 
-**테스트 환경에서는 자동 비활성화:**
-
+**2. 로컬 개발 중 로그 끄기**
 ```bash
-# NODE_ENV=test일 때 자동으로 로그 비활성화
-NODE_ENV=test npm test
+# FEATURE_LOGS=false로 명시적으로 끄기
+FEATURE_LOGS=false npm run dev
 ```
 
-**package.json 설정 예시:**
+**3. 프로덕션 디버깅**
+```bash
+# FEATURE_LOGS=true로 명시적으로 켜기
+NODE_ENV=production FEATURE_LOGS=true node app.js
+```
+
+**4. 테스트 실행**
+```bash
+# 항상 로그 OFF (깔끔한 테스트 출력)
+npm test
+```
+
+#### package.json 설정 예시
 
 ```json
 {
   "scripts": {
     "start": "node app.js",
-    "start:prod": "DISABLE_FEATURE_LOGS=true node app.js",
-    "test": "NODE_ENV=test jest"
+    "dev": "node app.js",                          // development 환경: 로그 ON
+    "dev:quiet": "FEATURE_LOGS=false node app.js", // 로그 끄기
+    "start:prod": "NODE_ENV=production node app.js", // production: 로그 OFF
+    "test": "NODE_ENV=test jest"                   // test: 항상 로그 OFF
   }
 }
 ```
+
+**핵심:**
+- ✅ **development**: 기본 로그 ON (편리한 디버깅)
+- ❌ **production**: 기본 로그 OFF (깔끔한 프로덕션)
+- 🎯 **`FEATURE_LOGS=true/false`**: 언제든지 수동 제어 가능
 
 더 자세한 내용은 [Feature API 문서 - 디버깅 및 로그 제어](../api/feature.md#디버깅-및-로그-제어)를 참고하세요.
 

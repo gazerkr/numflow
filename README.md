@@ -34,27 +34,13 @@ Use existing Express code and middleware without any modifications:
 
 ### High Performance
 
-Radix Tree-based routing provides 228% faster performance compared to Express on average.
+Radix Tree-based routing provides **3.3x (228%)** faster performance compared to Express on average.
 
-| Scenario | Express | Numflow | Fastify | vs Express | vs Fastify |
-|---------|---------|---------|---------|-----------|-----------|
-| Hello World | 20,542 req/s | 75,626 req/s | 89,108 req/s | +268% | -15% |
-| JSON Response (GET) | 20,421 req/s | 65,574 req/s | 86,607 req/s | +221% | -24% |
-| JSON Parse (POST) | 18,151 req/s | 57,872 req/s | 51,664 req/s | +219% | +12% ⭐ |
-| Route Params (single) | 19,790 req/s | 65,734 req/s | 84,025 req/s | +232% | -22% |
-| Route Params (multiple) | 19,982 req/s | 62,387 req/s | 80,992 req/s | +212% | -23% |
-| Route + Query | 19,893 req/s | 61,988 req/s | 85,082 req/s | +212% | -27% |
-| Middleware Chain | 19,080 req/s | 63,254 req/s | 83,837 req/s | +232% | -25% |
-| **Average** | **19,694 req/s** | **64,634 req/s** | **80,188 req/s** | **+228%** | **-19%** |
-
-Performance improvements:
 - vs Express: +228% (3.3x faster on average)
 - Outperforms Fastify on POST requests (+12%)
+- Feature-First overhead: Only 0.70% (negligible)
 
-**Feature-First Overhead**: Only 0.70% (negligible)
-- Regular Route: 49,714 req/s
-- Feature (10 Steps): 49,366 req/s
-- Overhead: 0.70%
+For detailed benchmark results, see the [Performance Benchmarks](#performance-benchmarks) section.
 
 ### Feature-First Architecture
 
@@ -166,12 +152,10 @@ features/
 ```
 
 **Additional Features:**
-- **Zero Configuration**: API generation from folder structure without `index.js`
-- **Convention over Configuration**: Auto-infer HTTP method, path, execution order from folder structure
-- **Transaction Management Structure**: Transaction management via `contextInitializer`, `onError` hooks
+- **Transaction Management**: Transaction management via `contextInitializer`, `onError` hooks
 - **Auto-execute Async Tasks**: Automatic async-tasks execution after response
 - **Centralized Error Handling**: Unified error handling with `onError` hook
-- **Minimal Overhead**: 1.02% performance overhead (based on 10 steps)
+- **Minimal Overhead**: 0.70% performance overhead (based on 10 steps)
 
 ### WebSocket Support
 
@@ -495,16 +479,13 @@ mv steps/400-create-order.js steps/450-create-order.js
 
 ### Feature-First Performance
 
-**Feature-First Overhead**: Only 0.70% (negligible)
+The performance overhead of Feature-First architecture is only **0.70%**, which is negligible:
+
 - Regular Route: 49,714 req/s
 - Feature (10 Steps): 49,366 req/s
-- Overhead: 0.70%
+- **Overhead: 0.70%** (based on 10 steps)
 
-### Key Results
-
-- 3.3x faster than Express on average (+228%)
-- Outperforms Fastify on POST requests (+12%)
-- Feature-First overhead 0.70% (10 steps)
+You can structure complex business logic with almost no performance loss.
 
 For detailed benchmark results, see [PERFORMANCE.md](docs/en/PERFORMANCE.md)
 
@@ -555,6 +536,31 @@ Detailed compatibility info: [COMPATIBILITY.md](docs/en/COMPATIBILITY.md)
 ### Compatibility
 
 - [Express Compatibility](docs/en/COMPATIBILITY.md) - Express compatibility details
+
+---
+
+## Showcase
+
+### Real-World Examples
+
+Check out real-world projects built with Numflow's Feature-First architecture:
+
+#### 📝 [Numflow Feature-First Blog](https://github.com/gazerkr/numflow-feature-first-blog)
+
+A fully functional blog application built with Feature-First architecture. It implements the following features:
+
+- Post CRUD (Create, Read, Update, Delete)
+- Comment system
+- User authentication and authorization
+- File upload (images)
+- Pagination
+- Search functionality
+
+What you can learn from this example:
+- How to design Feature-First folder structure
+- How to structure business logic with Steps and Async Tasks
+- Data sharing using Context
+- Transaction management and error handling patterns
 
 ---
 

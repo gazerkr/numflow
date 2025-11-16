@@ -1598,10 +1598,17 @@ app.listen(3000)
 
 ### Q: How do I debug Feature-First?
 
-**A:** Use debug mode:
+**A:** Logs are automatically enabled in development environment:
 
 ```bash
-FEATURE_DEBUG=true node app.js
+# Development (auto-enabled logs)
+npm run dev
+
+# Production debug mode
+NODE_ENV=production FEATURE_LOGS=true node app.js
+
+# Disable logs in development
+FEATURE_LOGS=false npm run dev
 ```
 
 This will log:
@@ -1609,6 +1616,12 @@ This will log:
 - Execution time for each step
 - Context data flow
 - Errors with full stack traces
+
+**Logging rules:**
+- `test` environment: Always OFF
+- `development`: ON by default
+- `production`: OFF by default
+- `FEATURE_LOGS=true/false`: Manual control
 
 ### Q: Can I reuse steps across features?
 

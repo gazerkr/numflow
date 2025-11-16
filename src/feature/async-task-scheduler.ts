@@ -19,6 +19,41 @@ export class AsyncTaskScheduler {
   private readonly tasks: AsyncTaskInfo[]
   private readonly context: Context
 
+  /**
+   * Debug mode caching (performance optimization)
+   * Check environment variable only once at class load instead of every call
+   *
+   * Logging policy (simple rules):
+   *
+   * 1. Test environment: Always OFF (for clean test output)
+   *    - NODE_ENV=test → No logs
+   *
+   * 2. Explicit control (highest priority):
+   *    - FEATURE_LOGS=true → Force ON (any environment except test)
+   *    - FEATURE_LOGS=false → Force OFF (any environment)
+   *
+   * 3. Default behavior (when FEATURE_LOGS not set):
+   *    - development → ON (helpful for debugging)
+   *    - production → OFF (clean production logs)
+   */
+  private static readonly isDebugMode = (() => {
+    // Test environment: always OFF
+    if (process.env.NODE_ENV === 'test') {
+      return false
+    }
+
+    // Explicit control (highest priority)
+    if (process.env.FEATURE_LOGS === 'true') {
+      return true
+    }
+    if (process.env.FEATURE_LOGS === 'false') {
+      return false
+    }
+
+    // Default: ON in development, OFF in production
+    return process.env.NODE_ENV === 'development'
+  })()
+
   constructor(tasks: AsyncTaskInfo[], context: Context) {
     this.tasks = tasks
     this.context = context
@@ -86,7 +121,8 @@ export class AsyncTaskScheduler {
    * @param message - Log message
    */
   private log(message: string): void {
-    if (process.env.DISABLE_FEATURE_LOGS === 'true' || process.env.NODE_ENV === 'test') {
+    // Performance optimization: use static cached isDebugMode
+    if (!AsyncTaskScheduler.isDebugMode) {
       return
     }
     console.log(`[AsyncTaskScheduler] ${message}`)
@@ -98,7 +134,8 @@ export class AsyncTaskScheduler {
    * @param message - Error message
    */
   private logError(message: string): void {
-    if (process.env.DISABLE_FEATURE_LOGS === 'true' || process.env.NODE_ENV === 'test') {
+    // Performance optimization: use static cached isDebugMode
+    if (!AsyncTaskScheduler.isDebugMode) {
       return
     }
     console.error(`[AsyncTaskScheduler] ERROR: ${message}`)

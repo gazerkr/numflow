@@ -2,8 +2,8 @@
  * Auto-Executor Debug Mode Tests
  *
  * NOTE: This test verifies logging functionality that only runs in Debug mode.
- * To satisfy FEATURE_DEBUG='true' and NODE_ENV!='test' conditions,
- * we manipulate environment variables and reload modules.
+ * To enable logging, we set NODE_ENV='development' (auto-enables logs).
+ * We manipulate environment variables and reload modules.
  */
 
 import * as path from 'path'
@@ -11,7 +11,7 @@ import * as fs from 'fs'
 
 // Set environment variables (before module loading)
 const originalEnv = process.env.NODE_ENV
-process.env.FEATURE_DEBUG = 'true'
+// NOTE: NODE_ENV='development' auto-enables Feature logs
 process.env.NODE_ENV = 'development'
 
 // Clear module cache and reload
@@ -86,7 +86,6 @@ module.exports = async (context) => {
   afterAll(() => {
     // Restore environment variables
     process.env.NODE_ENV = originalEnv
-    delete process.env.FEATURE_DEBUG
 
     // Clean up fixtures
     if (fs.existsSync(fixturesDir)) {

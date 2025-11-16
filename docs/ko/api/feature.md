@@ -1313,171 +1313,98 @@ Feature 실행 중 AutoExecutor는 각 step의 실행 상태를 자동으로 로
 [AutoExecutor] [POST /api/orders] ERROR: Step 100 failed: 주문 상품이 없습니다
 ```
 
-### 로그 비활성화
+### 로그 제어
 
-프로덕션 환경이나 특정 상황에서 Feature 로그를 비활성화할 수 있습니다.
+Feature 로그는 환경에 따라 자동으로 제어되며, 필요시 수동으로 켜거나 끌 수 있습니다.
 
-**방법 1: 환경변수 설정**
+#### 로그 출력 규칙
+
+**간단한 3가지 규칙:**
+
+1. ❌ **Test 환경**: 항상 로그 OFF (깔끔한 테스트 출력)
+2. ✅ **명시적 제어**: `FEATURE_LOGS=true/false` (최우선)
+3. ✅ **기본 동작**: `development` ON, `production` OFF
+
+#### 로그 출력 조건표
+
+| 환경 | FEATURE_LOGS | 로그 출력 | 설명 |
+|------|-------------|----------|------|
+| **test** | (무시됨) | ❌ | 테스트는 항상 로그 OFF |
+| **development** | (미설정) | ✅ **ON** | 개발 환경 기본값 |
+| **development** | `false` | ❌ | 명시적으로 끄기 |
+| **production** | (미설정) | ❌ | 프로덕션 기본값 |
+| **production** | `true` | ✅ **ON** | 디버깅 모드 |
+
+#### 사용 예시
+
+**시나리오 1: 로컬 개발 (자동 로그 출력)**
 ```bash
-# 로그 비활성화
-DISABLE_FEATURE_LOGS=true node app.js
-
-# 또는 .env 파일에서
-DISABLE_FEATURE_LOGS=true
+# 아무것도 설정 안 함 → 로그 자동 출력
+npm run dev
 ```
 
-**방법 2: 테스트 환경에서 자동 비활성화**
+**시나리오 2: 로컬 개발 중 로그 끄기**
 ```bash
-# NODE_ENV=test일 때 자동으로 로그 비활성화
-NODE_ENV=test npm test
+# FEATURE_LOGS=false로 명시적으로 끄기
+FEATURE_LOGS=false npm run dev
 ```
 
-**package.json 스크립트 예시:**
+**시나리오 3: 프로덕션 디버깅**
+```bash
+# FEATURE_LOGS=true로 명시적으로 켜기
+NODE_ENV=production FEATURE_LOGS=true node app.js
+```
+
+**시나리오 4: 테스트 실행**
+```bash
+# 항상 로그 OFF (깔끔한 테스트 출력)
+npm test
+```
+
+#### package.json 스크립트 예시
+
 ```json
 {
   "scripts": {
     "start": "node app.js",
-    "start:silent": "DISABLE_FEATURE_LOGS=true node app.js",
-    "test": "NODE_ENV=test jest"
+    "dev": "node app.js",                          // development: 로그 ON
+    "dev:quiet": "FEATURE_LOGS=false node app.js", // 로그 끄기
+    "start:prod": "NODE_ENV=production node app.js", // production: 로그 OFF
+    "prod:debug": "NODE_ENV=production FEATURE_LOGS=true node app.js", // production 디버깅
+    "test": "NODE_ENV=test jest"                   // test: 항상 로그 OFF
   }
 }
 ```
 
-**Docker 환경 예시:**
+#### Docker 환경 예시
+
 ```dockerfile
-# Dockerfile
-ENV DISABLE_FEATURE_LOGS=true
+# Dockerfile (production - 로그 OFF)
+FROM node:20-alpine
+ENV NODE_ENV=production
+# FEATURE_LOGS 설정 안 함 → 기본 OFF
 CMD ["node", "app.js"]
 ```
 
-**프로그래매틱 방식:**
-```javascript
-// app.js
-if (process.env.NODE_ENV === 'production') {
-  process.env.DISABLE_FEATURE_LOGS = 'true'
-}
-
-const app = numflow()
-app.registerFeatures('./features')
-app.listen(3000)
+```dockerfile
+# Dockerfile (production debug - 로그 ON)
+FROM node:20-alpine
+ENV NODE_ENV=production
+ENV FEATURE_LOGS=true
+CMD ["node", "app.js"]
 ```
 
----
-
-## 디버그 모드 (Debug Mode)
-
-Debug Mode는 Step 실행 흐름을 시각화하고 Context 변화를 추적하여 디버깅을 쉽게 만듭니다.
-
-> **참고**: Debug Mode는 Feature-First 패턴에서만 작동합니다. 전체 문서는 [Debug Mode 가이드](../getting-started/debug-mode.md)를 참고하세요.
-
-### Debug Mode 활성화
-
-Debug Mode는 **기본적으로 비활성화**되어 있습니다. 디버깅이 필요할 때 활성화하세요:
-
-```bash
-# 방법 1: 환경 변수
-FEATURE_DEBUG=true node app.js
-
-# 방법 2: .env 파일
-echo "FEATURE_DEBUG=true" >> .env
-node app.js
-
-# 방법 3: package.json 스크립트
-{
-  "scripts": {
-    "dev": "FEATURE_DEBUG=true node app.js",  // 개발 (Debug Mode 활성화)
-    "start": "node app.js"                     // 프로덕션 (비활성화)
-  }
-}
-```
-
-### Debug 출력 예시
-
-**성공 케이스:**
-```bash
-[Feature] POST /api/orders
-  [Step 100] validate-order (2ms) ✓
-    ├─ Input: {"userId":1,"orderData":{"items":[...]}}
-    └─ Context: {"validation":{"isValid":true,"itemCount":1}}
-
-  [Step 200] create-order (15ms) ✓
-    ├─ Input: {"userId":1,"orderData":{...}}
-    └─ Context: {"order":{"orderId":"12345","status":"created"}}
-
-  [Summary]
-    Total: 17ms
-    Steps: 2/2 passed
-    Status: ✓ Success
-```
-
-**에러 케이스:**
-```bash
-[Feature] POST /api/orders
-  [Step 100] validate-order (2ms) ✗
-    ├─ Input: {"userId":1,"orderData":{"items":[]}}
-    └─ Error: 주문에 상품이 없습니다
-
-  [Summary]
-    Total: 2ms
-    Steps: 0/1 passed
-    Status: ✗ Failed
-    Error: 주문에 상품이 없습니다
-```
-
-### 주요 기능
-
-1. **Step별 추적**
-   - 각 Step의 실행 시간 (밀리초)
-   - 성공/실패 표시 (✓/✗)
-   - Step 실행 전 Input 상태
-   - Step 실행 후 Context 변화
-
-2. **성능 프로파일링**
-   - 느린 Step을 쉽게 식별
-   - 전체 실행 시간
-   - Step별 시간 분석
-
-3. **Context 흐름 시각화**
-   - Step 간 데이터 흐름 확인
-   - 각 Step이 Context에 추가하는 내용 추적
-   - 데이터 손실이나 손상 위치 파악
-
-### 환경 변수
+#### 환경 변수
 
 | 변수 | 기본값 | 설명 |
 |-----|--------|------|
-| `FEATURE_DEBUG` | `false` | `true`로 설정 시 상세한 Step별 Debug 출력 활성화 |
-| `DISABLE_FEATURE_LOGS` | `false` | `true`로 설정 시 모든 Feature 로그 비활성화 (DEBUG보다 우선) |
-| `NODE_ENV` | - | `test`일 때 모든 로그 자동 비활성화 |
+| `FEATURE_LOGS` | (미설정) | `true`: 강제 ON, `false`: 강제 OFF |
+| `NODE_ENV` | - | `development`: 기본 ON, `production`: 기본 OFF, `test`: 항상 OFF |
 
-### 성능 영향
+#### 성능 최적화
 
-Debug Mode는 **최소한의 성능 오버헤드**를 가집니다 (약 2-3%):
+로그 제어는 클래스 로드 시점에 한 번만 평가되므로 **성능 오버헤드가 거의 없습니다** (0.01% 미만).
 
-- Debug Mode OFF: 42,104 req/s
-- Debug Mode ON: ~41,000 req/s
-
-**권장사항**: 프로덕션 환경에서는 비활성화 상태 유지
-
-### Best Practices
-
-```javascript
-// ✅ 좋은 예: 개발 환경에서 활성화
-{
-  "scripts": {
-    "dev": "FEATURE_DEBUG=true node app.js",
-    "start": "node app.js"
-  }
-}
-
-// ✅ 좋은 예: 특정 Feature 디버깅 시 사용
-FEATURE_DEBUG=true node app.js
-
-// ❌ 나쁜 예: 프로덕션에서 활성화
-// 성능 오버헤드와 로그에 민감한 데이터 노출 가능
-```
-
-전체 문서, 예제, 고급 사용법은 **[Debug Mode 가이드](../getting-started/debug-mode.md)**를 참고하세요.
 
 ---
 
