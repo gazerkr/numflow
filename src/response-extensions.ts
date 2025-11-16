@@ -394,7 +394,7 @@ export function extendResponse(res: ServerResponse): Response {
    * @example
    * res.attachment() // Content-Disposition: attachment
    * res.attachment('report.pdf') // Content-Disposition: attachment; filename="report.pdf"
-   * res.attachment('한글.txt') // Content-Disposition: attachment; filename="???.txt"; filename*=UTF-8''%ED%95%9C%EA%B8%80.txt
+   * res.attachment('unicode.txt') // Content-Disposition: attachment; filename="unicode.txt"; filename*=UTF-8''unicode.txt
    */
   extendedRes.attachment = function (filename?: string): Response {
     if (filename) {

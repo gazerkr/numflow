@@ -1,13 +1,13 @@
 /**
  * Feature Error Tracking Tests
  *
- * 철저한 런타임 에러 추적 테스트
+ * Comprehensive runtime error tracking tests
  *
- * 테스트 범위:
- * 1. Step Functions 에러 추적 - FeatureError 래핑 및 정보 포함 여부
- * 2. Async Tasks 에러 추적 - 에러 로그에 파일 경로 포함 여부
- * 3. 통합 테스트 - 실제 Feature 실행 중 에러 추적
- * 4. 에러 메시지 명확성 - 디버깅에 필요한 정보 충분성
+ * Test Coverage:
+ * 1. Step Functions Error Tracking - FeatureError wrapping and information inclusion
+ * 2. Async Tasks Error Tracking - File path inclusion in error logs
+ * 3. Integration Tests - Error tracking during actual Feature execution
+ * 4. Error Message Clarity - Sufficient information for debugging
  */
 
 import { AutoExecutor } from '../src/feature/auto-executor.js'

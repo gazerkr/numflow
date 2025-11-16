@@ -1318,7 +1318,7 @@ describe('Response Extensions', () => {
       // Non-ASCII should use filename*=UTF-8''...
       expect(header).toContain('filename*=UTF-8\'\'')
       // Should include percent-encoded UTF-8
-      expect(header).toContain('%ED%95%9C%EA%B8%80') // "한글" in percent-encoded UTF-8
+      expect(header).toContain('%ED%95%9C%EA%B8%80') // Korean characters in percent-encoded UTF-8
     })
 
     it('should provide ASCII fallback for non-ASCII filenames (RFC 6266)', () => {
@@ -1343,7 +1343,7 @@ describe('Response Extensions', () => {
       // Mixed case should use filename* for UTF-8 encoding
       expect(header).toContain('filename*=UTF-8\'\'')
       expect(header).toContain('report')
-      expect(header).toContain('%ED%95%9C%EA%B8%80') // "한글"
+      expect(header).toContain('%ED%95%9C%EA%B8%80') // Korean characters
       expect(header).toContain('2024')
     })
   })

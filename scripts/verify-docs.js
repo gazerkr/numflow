@@ -1,22 +1,22 @@
 #!/usr/bin/env node
 
 /**
- * 문서-코드 일치성 검증 스크립트
+ * Documentation-Code Consistency Verification Script
  *
- * 목적: 문서에 작성된 API가 실제로 구현되어 있는지 자동으로 검증
+ * Purpose: Automatically verify if APIs documented are actually implemented
  *
- * 검증 단계:
- * 1. API 문서에서 메서드 목록 추출
- * 2. 소스 코드에서 실제 구현 확인
- * 3. 테스트 코드 존재 확인
- * 4. 예제 코드 확인
+ * Verification Steps:
+ * 1. Extract method list from API documentation
+ * 2. Check actual implementation in source code
+ * 3. Check test code existence
+ * 4. Check example code
  */
 
 const fs = require('fs')
 const path = require('path')
 const { execSync } = require('child_process')
 
-// 색상 코드
+// Color codes
 const colors = {
   reset: '\x1b[0m',
   green: '\x1b[32m',
@@ -31,35 +31,35 @@ function log(message, color = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`)
 }
 
-// API 문서에서 메서드 추출
+// Extract methods from API documentation
 function extractAPIsFromDoc(docPath) {
   const content = fs.readFileSync(docPath, 'utf-8')
   const apis = []
 
-  // 방법 1: 마크다운 헤딩에서 API 추출 (### app.method(), ### method())
+  // Method 1: Extract APIs from markdown headings (### app.method(), ### method())
   const headingRegex = /^###\s+([a-zA-Z0-9_.]+(?:\([^)]*\))?)/gm
   let match
 
   while ((match = headingRegex.exec(content)) !== null) {
     const api = match[1].trim()
-    // 일반적인 섹션 헤더 제외
+    // Exclude common section headers
     if (api &&
         !api.includes('(req, res') &&
         !api.includes('(err, req, res') &&
         api !== 'Overview' &&
         api !== 'Examples' &&
-        api.includes('.') &&  // 반드시 객체.메서드 형식이어야 함
-        api.length > 3) {     // 너무 짧은 이름 제외
+        api.includes('.') &&  // Must be in object.method format
+        api.length > 3) {     // Exclude too short names
       apis.push(api)
     }
   }
 
-  // 방법 2: 마크다운 테이블에서 API 추출 (| API | Status | ...)
+  // Method 2: Extract APIs from markdown tables (| API | Status | ...)
   const tableRegex = /\|\s*([a-zA-Z0-9_.()[\]]+)\s*\|/g
 
   while ((match = tableRegex.exec(content)) !== null) {
     const api = match[1].trim()
-    // 헤더나 상태 컬럼 제외
+    // Exclude headers and status columns
     if (api &&
         api !== 'API' &&
         api !== 'Status' &&
@@ -83,7 +83,7 @@ function extractAPIsFromDoc(docPath) {
     }
   }
 
-  // 잘못 추출된 API 제외
+  // Exclude incorrectly extracted APIs
   const excludeList = [
     'RESTful', 'HTTP', 'Best', 'Dynamic', 'AutoExecutor', 'Debug',
     'false', 'Option', 'Description', 'Variable', 'Performance', 'ErrorHandler',
@@ -92,32 +92,32 @@ function extractAPIsFromDoc(docPath) {
 
   const filteredApis = apis.filter(api => {
     const fullName = api.replace(/\(.*\)/, '').replace(/\[.*\]/, '')
-    // 숫자나 너무 짧은 이름 제외
+    // Exclude numbers or too short names
     if (/^\d+\.$/.test(fullName) || fullName.length <= 2) {
       return false
     }
-    // Exclude 리스트 제외
+    // Exclude items in exclude list
     if (excludeList.includes(fullName) || excludeList.some(ex => fullName.includes(ex))) {
       return false
     }
     return true
   })
 
-  return [...new Set(filteredApis)] // 중복 제거
+  return [...new Set(filteredApis)] // Remove duplicates
 }
 
-// 소스 코드에서 메서드 구현 확인
+// Check method implementation in source code
 function checkImplementation(api, sourceDir) {
   try {
-    // API 이름에서 실제 메서드명 추출
+    // Extract actual method name from API name
     const fullName = api.replace(/\(.*\)/, '').replace(/\[.*\]/, '')
 
-    // 숫자나 너무 짧은 이름은 건너뛰기 (섹션 제목일 가능성)
+    // Skip numbers or too short names (likely section titles)
     if (/^\d+\.$/.test(fullName) || fullName.length <= 2) {
       return { exists: false, locations: 0 }
     }
 
-    // 일반적인 섹션 제목 제외
+    // Exclude common section titles
     const excludeList = [
       'RESTful', 'HTTP', 'Best', 'Dynamic', 'AutoExecutor', 'Debug',
       'false', 'Option', 'Description', 'Variable', 'Performance', 'ErrorHandler',
@@ -127,20 +127,20 @@ function checkImplementation(api, sourceDir) {
       return { exists: false, locations: 0 }
     }
 
-    // 객체.메서드 형식 분리 (예: req.get → get)
+    // Split object.method format (e.g., req.get → get)
     const parts = fullName.split('.')
     const methodName = parts.length > 1 ? parts[parts.length - 1] : fullName
 
-    // 간단한 검색: 메서드/프로퍼티 이름으로 검색
+    // Simple search: Search by method/property name
     const grepCmd = `grep -r "${methodName}" ${sourceDir} --include="*.ts" --include="*.js" 2>/dev/null || true`
     const result = execSync(grepCmd, { encoding: 'utf-8' })
 
-    // 결과가 있고, 실제로 정의하는 코드가 있는지 확인
+    // Check if results exist and contain actual defining code
     if (result.length > 10) {
       const lines = result.split('\n').filter(line => {
         const trimmed = line.trim()
         return trimmed &&
-               // 함수나 프로퍼티 정의로 보이는 패턴
+               // Pattern that looks like function or property definition
                (trimmed.includes(`${methodName} =`) ||
                 trimmed.includes(`${methodName}:`) ||
                 trimmed.includes(`${methodName}(`) ||
@@ -161,7 +161,7 @@ function checkImplementation(api, sourceDir) {
   }
 }
 
-// 테스트 코드 존재 확인
+// Check test code existence
 function checkTests(api, testDir) {
   try {
     const methodName = api.replace(/\(.*\)/, '').replace(/\[.*\]/, '')
@@ -178,7 +178,7 @@ function checkTests(api, testDir) {
   }
 }
 
-// 예제 코드 확인
+// Check example code
 function checkExamples(api, examplesDir) {
   try {
     const methodName = api.replace(/\(.*\)/, '').replace(/\[.*\]/, '')
@@ -195,10 +195,10 @@ function checkExamples(api, examplesDir) {
   }
 }
 
-// 메인 검증 함수
+// Main verification function
 function verifyDocumentation(docsLang = 'ko') {
   log('\n═══════════════════════════════════════════════════', 'cyan')
-  log(`   문서-코드 일치성 검증 시작 (${docsLang})`, 'cyan')
+  log(`   Documentation-Code Consistency Verification Started (${docsLang})`, 'cyan')
   log('═══════════════════════════════════════════════════\n', 'cyan')
 
   const rootDir = path.join(__dirname, '..')
@@ -207,7 +207,7 @@ function verifyDocumentation(docsLang = 'ko') {
   const testDir = path.join(rootDir, 'test')
   const examplesDir = path.join(rootDir, 'examples')
 
-  // API 문서 목록
+  // API documentation list
   const apiDocs = [
     { name: 'Application', path: path.join(docsDir, 'api/application.md') },
     { name: 'Request', path: path.join(docsDir, 'api/request.md') },
@@ -224,17 +224,17 @@ function verifyDocumentation(docsLang = 'ko') {
 
   for (const doc of apiDocs) {
     if (!fs.existsSync(doc.path)) {
-      log(`⚠️  문서 없음: ${doc.name}`, 'yellow')
+      log(`⚠️  Document not found: ${doc.name}`, 'yellow')
       continue
     }
 
-    log(`\n📄 검증 중: ${doc.name}`, 'blue')
+    log(`\n📄 Verifying: ${doc.name}`, 'blue')
     log('─'.repeat(50), 'blue')
 
     const apis = extractAPIsFromDoc(doc.path)
     totalAPIs += apis.length
 
-    log(`   추출된 API 개수: ${apis.length}`, 'cyan')
+    log(`   Extracted APIs: ${apis.length}`, 'cyan')
 
     const docResults = []
 
@@ -259,7 +259,7 @@ function verifyDocumentation(docsLang = 'ko') {
 
       docResults.push(result)
 
-      // 결과 출력
+      // Output results
       const implStatus = impl.exists ? '✅' : '❌'
       const testStatus = tests.exists ? '✅' : '⚠️ '
       const exampleStatus = examples.exists ? '✅' : '  '
@@ -271,21 +271,21 @@ function verifyDocumentation(docsLang = 'ko') {
     results.push({ doc: doc.name, apis: docResults })
   }
 
-  // 요약 리포트
+  // Summary report
   log('\n═══════════════════════════════════════════════════', 'cyan')
-  log('   검증 결과 요약', 'cyan')
+  log('   Verification Results Summary', 'cyan')
   log('═══════════════════════════════════════════════════\n', 'cyan')
 
-  log(`총 API 개수:        ${totalAPIs}`, 'bold')
-  log(`구현된 API:         ${implementedAPIs} (${Math.round(implementedAPIs/totalAPIs*100)}%)`,
+  log(`Total APIs:         ${totalAPIs}`, 'bold')
+  log(`Implemented APIs:   ${implementedAPIs} (${Math.round(implementedAPIs/totalAPIs*100)}%)`,
       implementedAPIs === totalAPIs ? 'green' : 'yellow')
-  log(`테스트된 API:       ${testedAPIs} (${Math.round(testedAPIs/totalAPIs*100)}%)`,
+  log(`Tested APIs:        ${testedAPIs} (${Math.round(testedAPIs/totalAPIs*100)}%)`,
       testedAPIs > totalAPIs * 0.8 ? 'green' : 'yellow')
-  log(`예제가 있는 API:    ${exampleAPIs} (${Math.round(exampleAPIs/totalAPIs*100)}%)`,
+  log(`APIs with Examples: ${exampleAPIs} (${Math.round(exampleAPIs/totalAPIs*100)}%)`,
       exampleAPIs > totalAPIs * 0.5 ? 'green' : 'yellow')
 
-  // 상세 리포트
-  log('\n📊 카테고리별 상세 리포트\n', 'cyan')
+  // Detailed report
+  log('\n📊 Detailed Report by Category\n', 'cyan')
 
   for (const { doc, apis } of results) {
     const implemented = apis.filter(a => a.implemented).length
@@ -293,44 +293,44 @@ function verifyDocumentation(docsLang = 'ko') {
     const withExamples = apis.filter(a => a.hasExamples).length
 
     log(`${doc}:`, 'bold')
-    log(`  ├─ 구현: ${implemented}/${apis.length} (${Math.round(implemented/apis.length*100)}%)`)
-    log(`  ├─ 테스트: ${tested}/${apis.length} (${Math.round(tested/apis.length*100)}%)`)
-    log(`  └─ 예제: ${withExamples}/${apis.length} (${Math.round(withExamples/apis.length*100)}%)`)
+    log(`  ├─ Implemented: ${implemented}/${apis.length} (${Math.round(implemented/apis.length*100)}%)`)
+    log(`  ├─ Tested: ${tested}/${apis.length} (${Math.round(tested/apis.length*100)}%)`)
+    log(`  └─ Examples: ${withExamples}/${apis.length} (${Math.round(withExamples/apis.length*100)}%)`)
   }
 
-  // 경고 및 권장사항
-  log('\n⚠️  권장사항\n', 'yellow')
+  // Warnings and recommendations
+  log('\n⚠️  Recommendations\n', 'yellow')
 
   if (implementedAPIs < totalAPIs) {
-    log(`   • ${totalAPIs - implementedAPIs}개 API가 문서에만 있고 구현되지 않았습니다.`, 'yellow')
-    log(`   • 문서를 업데이트하거나 API를 구현하세요.`, 'yellow')
+    log(`   • ${totalAPIs - implementedAPIs} APIs are documented but not implemented.`, 'yellow')
+    log(`   • Please update documentation or implement the APIs.`, 'yellow')
   }
 
   if (testedAPIs < totalAPIs * 0.9) {
-    log(`   • ${totalAPIs - testedAPIs}개 API에 테스트가 없습니다.`, 'yellow')
-    log(`   • 최소 90% 테스트 커버리지를 권장합니다.`, 'yellow')
+    log(`   • ${totalAPIs - testedAPIs} APIs have no tests.`, 'yellow')
+    log(`   • Minimum 90% test coverage is recommended.`, 'yellow')
   }
 
   if (exampleAPIs < totalAPIs * 0.5) {
-    log(`   • ${totalAPIs - exampleAPIs}개 API에 예제가 없습니다.`, 'yellow')
-    log(`   • 주요 API는 examples/ 디렉토리에 예제를 추가하세요.`, 'yellow')
+    log(`   • ${totalAPIs - exampleAPIs} APIs have no examples.`, 'yellow')
+    log(`   • Please add examples for main APIs in examples/ directory.`, 'yellow')
   }
 
   log('\n═══════════════════════════════════════════════════\n', 'cyan')
 
-  // 종료 코드
+  // Exit code
   if (implementedAPIs === totalAPIs && testedAPIs > totalAPIs * 0.9) {
-    log('✅ 검증 완료: 문서와 코드가 일치합니다!\n', 'green')
+    log('✅ Verification complete: Documentation and code match!\n', 'green')
     process.exit(0)
   } else {
-    log('⚠️  검증 완료: 일부 불일치가 발견되었습니다.\n', 'yellow')
+    log('⚠️  Verification complete: Some inconsistencies found.\n', 'yellow')
     process.exit(1)
   }
 }
 
-// 스크립트 실행
+// Run script
 if (require.main === module) {
-  // 명령줄 인자로 언어 지정 가능: node verify-docs.js en
+  // Language can be specified via command line: node verify-docs.js en
   const docsLang = process.argv[2] || 'ko'
   verifyDocumentation(docsLang)
 }

@@ -380,6 +380,169 @@ module.exports = validateOrder
 }
 ```
 
+### 커스텀 에러 처리와 originalError 보존
+
+Numflow는 Step에서 throw된 에러를 FeatureError로 래핑할 때 **원본 에러를 자동으로 보존**합니다. 이를 통해 커스텀 에러의 모든 속성(`code`, `validationErrors` 등)을 잃지 않고 그대로 사용할 수 있습니다.
+
+#### Step에서 커스텀 에러 던지기
+
+Step에서 그냥 에러를 throw하면 됩니다. 모든 커스텀 속성이 자동으로 보존됩니다:
+
+```javascript
+// features/api/orders/post/steps/100-check-stock.js
+const { BusinessError } = require('numflow')
+
+module.exports = async (ctx, req, res) => {
+  const stock = await db.getStock(ctx.productId)
+
+  if (stock === 0) {
+    // ✅ code 속성이 자동으로 보존됩니다!
+    throw new BusinessError('Out of stock', 'OUT_OF_STOCK')
+  }
+
+  ctx.stockLevel = stock
+}
+```
+
+**자동 응답:**
+```json
+{
+  "error": {
+    "message": "Out of stock",
+    "statusCode": 400,
+    "code": "OUT_OF_STOCK",
+    "step": {
+      "number": 100,
+      "name": "100-check-stock.js"
+    }
+  }
+}
+```
+
+#### onError에서 originalError 접근하기
+
+Feature의 `onError` 핸들러에서 `error.originalError`를 통해 커스텀 속성에 접근할 수 있습니다:
+
+```javascript
+// features/api/payments/post/index.js
+const numflow = require('numflow')
+
+module.exports = numflow.feature({
+  onError: async (error, ctx, req, res) => {
+    // ✅ originalError.code로 에러 코드 확인
+    if (error.originalError && error.originalError.code === 'NETWORK_ERROR') {
+      // Fallback provider로 전환 후 재시도
+      ctx.fallbackProvider = 'backup'
+      return numflow.retry({ delay: 10, maxAttempts: 2 })
+    }
+
+    // ✅ originalError.validationErrors 접근
+    if (error.originalError && error.originalError.validationErrors) {
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({
+        success: false,
+        errors: error.originalError.validationErrors
+      }))
+      return
+    }
+
+    // 기본 에러 응답
+    res.statusCode = 500
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify({ error: error.message }))
+  }
+})
+```
+
+#### 커스텀 에러 클래스 만들기
+
+HttpError를 확장하여 자신만의 에러 클래스를 만들 수 있습니다. **모든 커스텀 속성이 자동으로 응답에 포함됩니다:**
+
+```javascript
+// errors/PaymentError.js
+const { HttpError } = require('numflow')
+
+class PaymentError extends HttpError {
+  constructor(message, transactionId, provider) {
+    super(message, 400)
+    this.transactionId = transactionId  // 커스텀 속성 1
+    this.provider = provider            // 커스텀 속성 2
+    this.retryable = true               // 커스텀 속성 3
+  }
+}
+
+module.exports = PaymentError
+```
+
+**Step에서 사용:**
+```javascript
+// features/api/orders/get/steps/100-fetch.js
+const PaymentError = require('../../../../errors/PaymentError.js')
+
+module.exports = async (ctx, req, res) => {
+  const result = await processPayment()
+
+  if (!result.success) {
+    throw new PaymentError('Payment failed', 'tx_123', 'stripe')
+  }
+}
+```
+
+**자동 응답 (모든 커스텀 속성 포함!):**
+```json
+{
+  "error": {
+    "message": "Payment failed",
+    "statusCode": 400,
+    "transactionId": "tx_123",
+    "provider": "stripe",
+    "retryable": true,
+    "step": {
+      "number": 100,
+      "name": "100-fetch.js"
+    }
+  }
+}
+```
+
+#### onError에서 커스텀 속성 활용
+
+```javascript
+// features/api/orders/get/index.js
+const numflow = require('numflow')
+
+module.exports = numflow.feature({
+  onError: async (error, ctx, req, res) => {
+    // ✅ 커스텀 에러의 모든 속성 접근 가능!
+    if (error.originalError && error.originalError.transactionId) {
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({
+        success: false,
+        transactionId: error.originalError.transactionId,
+        provider: error.originalError.provider,
+        retryable: error.originalError.retryable
+      }))
+      return
+    }
+  }
+})
+```
+
+#### 핵심 장점
+
+✅ **자동 속성 보존**: Step에서 throw한 모든 커스텀 속성이 자동으로 보존됨
+✅ **onError 접근**: `error.originalError`를 통해 모든 커스텀 속성에 접근 가능
+✅ **재시도 로직**: 에러 코드에 따라 조건부 재시도 구현 가능
+✅ **확장 가능**: 새로운 커스텀 에러를 만들어도 코드 수정 불필요 (자동으로 작동!)
+✅ **글로벌 응답**: 글로벌 에러 핸들러도 자동으로 커스텀 속성 포함
+
+#### 주의사항
+
+⚠️ **표준 Error 속성 제외**: `message`, `stack`, `name` 등은 자동으로 제외됨 (중복 방지)
+⚠️ **onError 우선**: onError에서 응답을 직접 보내면 글로벌 에러 핸들러는 실행되지 않음
+
 ### Feature 에러 재시도 (Retry)
 
 Feature의 onError 핸들러에서 `numflow.retry()`를 반환하면 Feature를 자동으로 재시도합니다.
@@ -471,7 +634,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 ---
 
-**마지막 업데이트**: 2025-10-20 (retry 기능 추가)
-**이전 업데이트**: 2025-10-16 (transaction 제거, onError 패턴 적용)
+**마지막 업데이트**: 2025-11-17 (커스텀 에러 originalError 보존 기능 추가)
+**이전 업데이트**: 2025-10-20 (retry 기능 추가)
 
 **이전**: [목차](./README.md)

@@ -1027,6 +1027,69 @@ onError: async (error, context, req, res) => {
 
 **참고**: onError 핸들러가 없으면 에러는 글로벌 에러 핸들러로 전달됩니다.
 
+#### originalError 접근 ⭐
+
+onError 핸들러에서 `error.originalError`를 통해 Step에서 throw된 원본 에러의 모든 커스텀 속성에 접근할 수 있습니다:
+
+```javascript
+const numflow = require('numflow')
+const { BusinessError } = require('numflow')
+
+module.exports = numflow.feature({
+  onError: async (error, ctx, req, res) => {
+    // ✅ BusinessError의 code 속성 접근
+    if (error.originalError && error.originalError.code === 'OUT_OF_STOCK') {
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({
+        success: false,
+        errorCode: error.originalError.code,
+        message: 'Stock not available',
+        step: error.step?.name
+      }))
+      return
+    }
+
+    // ✅ ValidationError의 validationErrors 속성 접근
+    if (error.originalError && error.originalError.validationErrors) {
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({
+        success: false,
+        errors: error.originalError.validationErrors
+      }))
+      return
+    }
+
+    // ✅ 커스텀 에러의 모든 속성 접근
+    if (error.originalError && error.originalError.transactionId) {
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({
+        success: false,
+        transactionId: error.originalError.transactionId,
+        provider: error.originalError.provider,
+        retryable: error.originalError.retryable
+      }))
+      return
+    }
+
+    // 기본 에러 응답
+    res.statusCode = 500
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify({ error: error.message }))
+  }
+})
+```
+
+**핵심 장점:**
+- ✅ Step에서 throw한 모든 커스텀 속성이 자동으로 보존됨
+- ✅ `error.originalError`를 통해 접근 가능
+- ✅ 에러 코드 기반 조건부 재시도 구현 가능
+- ✅ 글로벌 에러 응답에도 자동으로 포함됨
+
+**자세한 내용**: [에러 처리 가이드 - 커스텀 에러 처리](../getting-started/error-handling.md#커스텀-에러-처리와-originalerror-보존)
+
 ### 에러 재시도 (Retry) ⭐
 
 onError 핸들러에서 `numflow.retry()`를 반환하면 Feature를 자동으로 재시도합니다.

@@ -434,6 +434,171 @@ interface ErrorResponse {
 
 ---
 
+## Custom Error Handling with originalError Preservation
+
+Numflow **automatically preserves the original error** when wrapping errors from steps in FeatureError. This means all custom properties (`code`, `validationErrors`, etc.) are retained and accessible.
+
+### Throwing Custom Errors in Steps
+
+Simply throw errors in your steps - all custom properties are automatically preserved:
+
+```javascript
+// features/api/orders/post/steps/100-check-stock.js
+const { BusinessError } = require('numflow')
+
+module.exports = async (ctx, req, res) => {
+  const stock = await db.getStock(ctx.productId)
+
+  if (stock === 0) {
+    // ✅ The 'code' property is automatically preserved!
+    throw new BusinessError('Out of stock', 'OUT_OF_STOCK')
+  }
+
+  ctx.stockLevel = stock
+}
+```
+
+**Automatic Response:**
+```json
+{
+  "error": {
+    "message": "Out of stock",
+    "statusCode": 400,
+    "code": "OUT_OF_STOCK",
+    "step": {
+      "number": 100,
+      "name": "100-check-stock.js"
+    }
+  }
+}
+```
+
+### Accessing originalError in onError
+
+Access custom properties through `error.originalError` in Feature's `onError` handler:
+
+```javascript
+// features/api/payments/post/index.js
+const numflow = require('numflow')
+
+module.exports = numflow.feature({
+  onError: async (error, ctx, req, res) => {
+    // ✅ Check error code via originalError.code
+    if (error.originalError && error.originalError.code === 'NETWORK_ERROR') {
+      // Switch to fallback provider and retry
+      ctx.fallbackProvider = 'backup'
+      return numflow.retry({ delay: 10, maxAttempts: 2 })
+    }
+
+    // ✅ Access originalError.validationErrors
+    if (error.originalError && error.originalError.validationErrors) {
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({
+        success: false,
+        errors: error.originalError.validationErrors
+      }))
+      return
+    }
+
+    // Default error response
+    res.statusCode = 500
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify({ error: error.message }))
+  }
+})
+```
+
+### Creating Custom Error Classes
+
+Extend HttpError to create your own error classes. **All custom properties are automatically included in the response:**
+
+```javascript
+// errors/PaymentError.js
+const { HttpError } = require('numflow')
+
+class PaymentError extends HttpError {
+  constructor(message, transactionId, provider) {
+    super(message, 400)
+    this.transactionId = transactionId  // Custom property 1
+    this.provider = provider            // Custom property 2
+    this.retryable = true               // Custom property 3
+  }
+}
+
+module.exports = PaymentError
+```
+
+**Using in Steps:**
+```javascript
+// features/api/orders/get/steps/100-fetch.js
+const PaymentError = require('../../../../errors/PaymentError.js')
+
+module.exports = async (ctx, req, res) => {
+  const result = await processPayment()
+
+  if (!result.success) {
+    throw new PaymentError('Payment failed', 'tx_123', 'stripe')
+  }
+}
+```
+
+**Automatic Response (All custom properties included!):**
+```json
+{
+  "error": {
+    "message": "Payment failed",
+    "statusCode": 400,
+    "transactionId": "tx_123",
+    "provider": "stripe",
+    "retryable": true,
+    "step": {
+      "number": 100,
+      "name": "100-fetch.js"
+    }
+  }
+}
+```
+
+### Using Custom Properties in onError
+
+```javascript
+// features/api/orders/get/index.js
+const numflow = require('numflow')
+
+module.exports = numflow.feature({
+  onError: async (error, ctx, req, res) => {
+    // ✅ Access all custom error properties!
+    if (error.originalError && error.originalError.transactionId) {
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({
+        success: false,
+        transactionId: error.originalError.transactionId,
+        provider: error.originalError.provider,
+        retryable: error.originalError.retryable
+      }))
+      return
+    }
+  }
+})
+```
+
+### Key Benefits
+
+✅ **Automatic Property Preservation**: All custom properties from thrown errors are automatically preserved
+✅ **onError Access**: Access all custom properties through `error.originalError`
+✅ **Retry Logic**: Implement conditional retry based on error codes
+✅ **Scalable**: Create new custom errors without modifying framework code (works automatically!)
+✅ **Global Response**: Global error handler automatically includes custom properties
+
+### Important Notes
+
+⚠️ **Standard Error Properties Excluded**: `message`, `stack`, `name` are automatically excluded (prevents duplication)
+⚠️ **onError Priority**: If onError sends a response directly, the global error handler won't run
+
+---
+
 ## Feature-First Error Handling
 
 ### onError Handler
@@ -725,4 +890,4 @@ app.onError((err, req, res) => {
 
 ---
 
-*Last updated: 2025-10-20*
+*Last updated: 2025-11-17 (Added custom error originalError preservation feature)*

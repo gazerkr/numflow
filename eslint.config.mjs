@@ -15,7 +15,7 @@ export default [
       parserOptions: {
         ecmaVersion: 2020,
         sourceType: "module",
-        // project 옵션 제거 - type-aware 규칙은 모두 off 되어 있으므로 불필요
+        // Removed project option - unnecessary as all type-aware rules are off
       },
       globals: {
         ...globals.node,
@@ -27,16 +27,16 @@ export default [
       "@typescript-eslint": tsPlugin,
     },
     rules: {
-      // TypeScript ESLint recommended rules (기본만 적용)
+      // TypeScript ESLint recommended rules (baseline only)
       ...tsPlugin.configs.recommended.rules,
 
       // TypeScript specific overrides
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/explicit-module-boundary-types": "off",
-      "@typescript-eslint/no-explicit-any": "off", // any 완전 허용 (Express 호환성)
-      "@typescript-eslint/no-unused-vars": "off", // 미사용 변수 완전 허용
+      "@typescript-eslint/no-explicit-any": "off", // Fully allow any (Express compatibility)
+      "@typescript-eslint/no-unused-vars": "off", // Fully allow unused variables
 
-      // Type safety rules (완화)
+      // Type safety rules (relaxed)
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unsafe-call": "off",
@@ -44,26 +44,26 @@ export default [
       "@typescript-eslint/no-unsafe-return": "off",
       "@typescript-eslint/no-unsafe-function-type": "off",
 
-      // Promise handling (완화) - type-aware 규칙이므로 project 없이는 동작 안함
-      "@typescript-eslint/no-floating-promises": "off", // 완전 허용
-      "@typescript-eslint/no-misused-promises": "off", // 완전 허용
+      // Promise handling (relaxed) - type-aware rules don't work without project
+      "@typescript-eslint/no-floating-promises": "off", // Fully allow
+      "@typescript-eslint/no-misused-promises": "off", // Fully allow
 
-      // 기타
+      // Others
       "@typescript-eslint/no-require-imports": "off",
       "@typescript-eslint/ban-ts-comment": "off",
       "@typescript-eslint/prefer-promise-reject-errors": "off",
       "@typescript-eslint/no-unnecessary-type-assertion": "off",
       "@typescript-eslint/unbound-method": "off",
 
-      // General (완화)
-      "no-console": "off", // console.log 허용 (개발 중)
-      "prefer-const": "off", // let 허용
-      "no-var": "error", // var는 금지 유지
-      "no-unused-vars": "off", // 미사용 변수 허용
-      "no-useless-escape": "off", // 불필요한 이스케이프 허용
-      "no-useless-catch": "off", // 불필요한 try/catch 허용
-      "no-undef": "off", // 정의되지 않은 변수 허용
-      "no-self-assign": "off", // 자기 할당 허용
+      // General (relaxed)
+      "no-console": "off", // Allow console.log (during development)
+      "prefer-const": "off", // Allow let
+      "no-var": "error", // Keep var prohibition
+      "no-unused-vars": "off", // Allow unused variables
+      "no-useless-escape": "off", // Allow unnecessary escapes
+      "no-useless-catch": "off", // Allow unnecessary try/catch
+      "no-undef": "off", // Allow undefined variables
+      "no-self-assign": "off", // Allow self assignment
     },
   },
 

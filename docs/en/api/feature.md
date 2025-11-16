@@ -818,6 +818,69 @@ onError: async (error, context, req, res) => {
 }
 ```
 
+**Accessing originalError ⭐**
+
+Access all custom properties of the original error thrown from steps through `error.originalError` in the onError handler:
+
+```javascript
+const numflow = require('numflow')
+const { BusinessError } = require('numflow')
+
+module.exports = numflow.feature({
+  onError: async (error, ctx, req, res) => {
+    // ✅ Access BusinessError's code property
+    if (error.originalError && error.originalError.code === 'OUT_OF_STOCK') {
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({
+        success: false,
+        errorCode: error.originalError.code,
+        message: 'Stock not available',
+        step: error.step?.name
+      }))
+      return
+    }
+
+    // ✅ Access ValidationError's validationErrors property
+    if (error.originalError && error.originalError.validationErrors) {
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({
+        success: false,
+        errors: error.originalError.validationErrors
+      }))
+      return
+    }
+
+    // ✅ Access all properties of custom errors
+    if (error.originalError && error.originalError.transactionId) {
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({
+        success: false,
+        transactionId: error.originalError.transactionId,
+        provider: error.originalError.provider,
+        retryable: error.originalError.retryable
+      }))
+      return
+    }
+
+    // Default error response
+    res.statusCode = 500
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify({ error: error.message }))
+  }
+})
+```
+
+**Key Benefits:**
+- ✅ All custom properties thrown from steps are automatically preserved
+- ✅ Accessible through `error.originalError`
+- ✅ Enables conditional retry based on error codes
+- ✅ Automatically included in global error responses
+
+**Learn More**: [Error Handling Guide - Custom Error Handling](../getting-started/error-handling.md#custom-error-handling-with-originalerror-preservation)
+
 **Note**: If no onError handler is provided, errors are passed to the global error handler.
 
 ---

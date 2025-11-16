@@ -450,15 +450,52 @@ export interface AsyncTaskSchedulerOptions {
 /**
  * Feature Error
  * Error that occurs during Feature execution
+ *
+ * @remarks
+ * FeatureError wraps the original error to preserve all custom properties
+ * (e.g., code, validationErrors, transactionId, etc.) via originalError reference.
+ *
+ * This allows:
+ * - onError handler to access original error properties for retry logic
+ * - Global error handler to extract all custom properties automatically
+ * - No loss of custom error information during error wrapping
+ *
+ * @example
+ * ```typescript
+ * // Step throws BusinessError
+ * throw new BusinessError('Out of stock', 'OUT_OF_STOCK')
+ *
+ * // AutoExecutor wraps it
+ * const featureError = new FeatureError(
+ *   err.message,
+ *   err,  // originalError preserved!
+ *   step,
+ *   context,
+ *   400
+ * )
+ *
+ * // onError can access code via originalError
+ * if (error.originalError instanceof BusinessError) {
+ *   const code = error.originalError.code  // 'OUT_OF_STOCK'
+ * }
+ * ```
  */
 export class FeatureError extends Error {
+  public readonly originalError?: Error
   public readonly step?: StepInfo
   public readonly context?: Context
   public readonly statusCode: number
 
-  constructor(message: string, step?: StepInfo, context?: Context, statusCode: number = 500) {
+  constructor(
+    message: string,
+    originalError?: Error,
+    step?: StepInfo,
+    context?: Context,
+    statusCode: number = 500
+  ) {
     super(message)
     this.name = 'FeatureError'
+    this.originalError = originalError
     this.step = step
     this.context = context
     this.statusCode = statusCode
@@ -471,7 +508,7 @@ export class FeatureError extends Error {
  */
 export class ValidationError extends FeatureError {
   constructor(message: string, context?: Context) {
-    super(message, undefined, context, 400)
+    super(message, undefined, undefined, context, 400)
     this.name = 'ValidationError'
   }
 }

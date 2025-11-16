@@ -84,7 +84,7 @@ describe('Feature Early Response', () => {
       expect(log).not.toContain('early-200-SHOULD-NOT-EXECUTE')
       expect(log).not.toContain('early-300-SHOULD-NOT-EXECUTE')
 
-      // Async task SHOULD execute (정상 종료로 인지)
+      // Async task SHOULD execute (recognized as normal termination)
       expect(log).toContain('early-async-task')
     })
   })
@@ -128,7 +128,7 @@ describe('Feature Early Response', () => {
       // Step 300 should NOT execute
       expect(log).not.toContain('middle-300-SHOULD-NOT-EXECUTE')
 
-      // Async task SHOULD execute (정상 종료로 인지)
+      // Async task SHOULD execute (recognized as normal termination)
       expect(log).toContain('middle-async-task')
     })
   })

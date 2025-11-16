@@ -28,7 +28,7 @@ describe('Auto-Error Handler', () => {
         fn: async () => {},
       }
 
-      const error = new FeatureError('Feature execution failed', step, undefined, 500)
+      const error = new FeatureError('Feature execution failed', undefined, step, undefined, 500)
 
       AutoErrorHandler.handle(error, mockRes)
 
@@ -71,7 +71,7 @@ describe('Auto-Error Handler', () => {
 
   describe('statusCode mapping by error type', () => {
     it('should use FeatureError statusCode correctly', () => {
-      const error = new FeatureError('Custom error', undefined, undefined, 403)
+      const error = new FeatureError('Custom error', undefined, undefined, undefined, 403)
 
       AutoErrorHandler.handle(error, mockRes)
 
@@ -96,7 +96,7 @@ describe('Auto-Error Handler', () => {
         fn: async () => {},
       }
 
-      const error = new FeatureError('Step failed', step)
+      const error = new FeatureError('Step failed', undefined, step)
 
       AutoErrorHandler.handle(error, mockRes)
 
@@ -209,7 +209,7 @@ describe('Auto-Error Handler', () => {
 
   describe('Custom FeatureError', () => {
     it('should handle FeatureError with custom statusCode', () => {
-      const error = new FeatureError('Not found', undefined, undefined, 404)
+      const error = new FeatureError('Not found', undefined, undefined, undefined, 404)
 
       AutoErrorHandler.handle(error, mockRes)
 
@@ -220,7 +220,7 @@ describe('Auto-Error Handler', () => {
     })
 
     it('should handle 401 Unauthorized error', () => {
-      const error = new FeatureError('Unauthorized', undefined, undefined, 401)
+      const error = new FeatureError('Unauthorized', undefined, undefined, undefined, 401)
 
       AutoErrorHandler.handle(error, mockRes)
 
@@ -228,7 +228,7 @@ describe('Auto-Error Handler', () => {
     })
 
     it('should handle 403 Forbidden error', () => {
-      const error = new FeatureError('Forbidden', undefined, undefined, 403)
+      const error = new FeatureError('Forbidden', undefined, undefined, undefined, 403)
 
       AutoErrorHandler.handle(error, mockRes)
 

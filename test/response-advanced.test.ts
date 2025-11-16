@@ -446,7 +446,7 @@ describe('Response Advanced Features', () => {
 
           // RFC 5987: UTF-8 encoded filename - filename*=UTF-8''%ED%85%8C...
           expect(disposition).toContain('filename*=UTF-8\'\'')
-          expect(disposition).toContain('%ED%85%8C%EC%8A%A4%ED%8A%B8') // "테스트" encoded
+          expect(disposition).toContain('%ED%85%8C%EC%8A%A4%ED%8A%B8') // Korean filename encoded
 
           done()
         })

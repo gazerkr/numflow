@@ -8,6 +8,7 @@
 import { IncomingMessage, ServerResponse } from 'http'
 import { isHttpError, isOperationalError, FeatureExecutionError } from './index.js'
 import { hasCode, hasValidationErrors } from '../utils/type-guards.js'
+import { FeatureError } from '../feature/types.js'
 
 /**
  * Error handler function type
@@ -56,8 +57,12 @@ export function sendErrorResponse(
     return
   }
 
-  // Extract status code if HttpError
-  const statusCode = isHttpError(err) ? err.statusCode : 500
+  // Extract status code if HttpError or FeatureError
+  const statusCode = isHttpError(err)
+    ? err.statusCode
+    : err instanceof FeatureError
+    ? err.statusCode
+    : 500
   const message = err.message || 'Internal server error'
 
   // Create error response object
@@ -68,8 +73,49 @@ export function sendErrorResponse(
     },
   }
 
-  // HttpError additional information
-  if (isHttpError(err)) {
+  // FeatureError processing: Extract custom properties from originalError
+  if (err instanceof FeatureError) {
+    // Add step information (only number and name)
+    if (err.step) {
+      errorResponse.error.step = {
+        number: err.step.number,
+        name: err.step.name,
+      }
+    }
+
+    // Process originalError (CORE FEATURE)
+    if (err.originalError) {
+      // 1. Extract known HttpError properties
+      if (isHttpError(err.originalError)) {
+        // BusinessError code
+        if (hasCode(err.originalError)) {
+          errorResponse.error.code = err.originalError.code
+        }
+        // ValidationError validationErrors
+        if (hasValidationErrors(err.originalError)) {
+          errorResponse.error.validationErrors = err.originalError.validationErrors
+        }
+        // HttpError suggestion, docUrl
+        if (err.originalError.suggestion) {
+          errorResponse.error.suggestion = err.originalError.suggestion
+        }
+        if (err.originalError.docUrl) {
+          errorResponse.error.docUrl = err.originalError.docUrl
+        }
+      }
+
+      // 2. Automatically extract ALL custom properties for future custom errors
+      // Copy all enumerable properties using Object.keys()
+      Object.keys(err.originalError).forEach((key) => {
+        // Exclude standard Error properties
+        if (!['message', 'stack', 'name', 'statusCode', 'isOperational'].includes(key)) {
+          ;(errorResponse.error as any)[key] = (err.originalError as any)[key]
+        }
+      })
+    }
+  }
+  // HttpError additional information (when not FeatureError)
+  else if (isHttpError(err)) {
     // BusinessError code property
     if (hasCode(err)) {
       errorResponse.error.code = err.code
@@ -87,7 +133,7 @@ export function sendErrorResponse(
     }
   }
 
-  // FeatureExecutionError additional information
+  // FeatureExecutionError additional information (special handling)
   if (err instanceof FeatureExecutionError) {
     if (err.step) {
       errorResponse.error.step = err.step
