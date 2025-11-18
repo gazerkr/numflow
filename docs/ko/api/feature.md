@@ -1241,17 +1241,6 @@ export default numflow.feature<ChatContext>({
 })
 ```
 
-### validation
-
-파일명 검증 옵션을 지정합니다.
-
-```javascript
-validation: {
-  allowDuplicates: false,  // 중복 번호 허용 안 함 (기본값)
-  requireHyphen: true,     // 하이픈 필수 (기본값)
-}
-```
-
 ### contextInitializer
 
 HTTP 요청 데이터를 기반으로 Context 객체의 초기값을 설정합니다.
@@ -2178,6 +2167,6 @@ try-catch 없이 에러를 자동으로 캐치하여 onError 핸들러로 전달
 
 ---
 
-**마지막 업데이트**: 2025-11-10 (다중 Features 디렉토리 등록 및 라우트 충돌 감지 섹션 추가)
-**이전 업데이트**: 2025-11-09 (Debug Mode 섹션 추가)
+**마지막 업데이트**: 2025-11-18 (validation 옵션 섹션 삭제 - 미구현 API 문서화 오류 수정)
+**이전 업데이트**: 2025-11-10 (다중 Features 디렉토리 등록 및 라우트 충돌 감지 섹션 추가)
 **이전**: [목차](./README.md)

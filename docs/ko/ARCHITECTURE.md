@@ -1598,12 +1598,6 @@ module.exports = numflow.feature({
     console.error('Order creation failed:', error)
     res.status(500).json({ error: error.message })
   },
-
-  // 검증 설정 (선택사항)
-  validation: {
-    allowDuplicates: false,  // 중복 번호 허용 안 함
-    pattern: /^\d+-.*\.js$/,  // 파일명 패턴
-  },
 })
 ```
 
