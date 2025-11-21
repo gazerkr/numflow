@@ -1,0 +1,19 @@
+{
+  "name": "numflow-static-files-example",
+  "version": "1.0.0",
+  "description": "Numflow static files serving example",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": [
+    "numflow",
+    "static",
+    "files",
+    "middleware",
+    "example"
+  ],
+  "author": "",
+  "license": "MIT"
+}

@@ -7,11 +7,11 @@
  * - Steps: ./steps directory auto-detected
  */
 
-const numflow = require('../../../../../dist/cjs/index.js')
+const numflow = require("numflow");
 
 module.exports = numflow.feature({
   // Extract request data with contextInitializer
   contextInitializer: (ctx, req, res) => {
-    ctx.todoText = req.body?.text
+    ctx.todoText = req.body?.text;
   },
-})
+});

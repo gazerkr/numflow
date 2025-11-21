@@ -7,10 +7,10 @@
  * - Steps: ./steps directory auto-detected
  */
 
-const numflow = require('../../../../../../dist/cjs/index.js')
+const numflow = require("numflow");
 
 module.exports = numflow.feature({
   contextInitializer: (ctx, req, res) => {
-    ctx.todoId = parseInt(req.params.id, 10)
+    ctx.todoId = parseInt(req.params.id, 10);
   },
-})
+});
