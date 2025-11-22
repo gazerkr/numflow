@@ -23,6 +23,7 @@ No need to hunt for router configurations. The folder name and structure are the
 ### 2. Code is the Living Design Document
 Keeping design documents and code in sync is nearly impossible. In Numflow, directories and filenames ARE the current implementation and the design.
 Even after years of maintenance, you can grasp exactly how the system works just by looking at the directory structure—it looks just like a design document.
+**The numbers in filenames are not just labels. Numflow guarantees execution in this numeric order at all times.**
 - `100-validate.js`
 - `200-check-stock.js`
 - `300-payment.js`
