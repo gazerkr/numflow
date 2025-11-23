@@ -1020,8 +1020,17 @@ export class Application extends EventEmitter {
    */
   private async _registerFeatureAsync(featureOrConfig: Feature | FeatureConfig): Promise<this> {
     // Error if not Feature instance (Feature must be created with feature() function)
-    const feature = featureOrConfig instanceof Feature
-      ? featureOrConfig
+    // Use duck typing for CommonJS/ESM compatibility
+    const isFeature = featureOrConfig instanceof Feature || (
+      featureOrConfig &&
+      typeof featureOrConfig === 'object' &&
+      typeof (featureOrConfig as any).getHandler === 'function' &&
+      typeof (featureOrConfig as any).getInfo === 'function' &&
+      typeof (featureOrConfig as any).initialize === 'function'
+    )
+
+    const feature = isFeature
+      ? (featureOrConfig as Feature)
       : (() => { throw new Error('Use numflow.feature() to create a Feature instance') })()
 
     const info = feature.getInfo()
