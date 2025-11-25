@@ -1,0 +1,16 @@
+/**
+ * DELETE /todos/:id - Delete TODO
+ *
+ * Convention over Configuration:
+ * - HTTP Method: folder name '@delete' -> DELETE
+ * - Path: folder structure -> /todos/:id
+ * - Steps: ./steps directory auto-detected
+ */
+
+import numflow from 'numflow'
+
+export default numflow.feature({
+  contextInitializer: (ctx, req, res) => {
+    ctx.todoId = req.params.id
+  }
+})

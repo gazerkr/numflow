@@ -1,8 +1,0 @@
-{
-  "name": "bulk-registration-example",
-  "version": "1.0.0",
-  "main": "app.js",
-  "dependencies": {
-    "numflow": "^0.2.10"
-  }
-}

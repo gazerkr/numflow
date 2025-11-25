@@ -1,0 +1,17 @@
+{
+  "name": "@numflow-examples/todo-app",
+  "version": "1.0.0",
+  "description": "Realworld TODO API - Complete example",
+  "private": true,
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "imports": {
+    "#db": "./db.js",
+    "#db/*": "./db/*.js"
+  },
+  "dependencies": {
+    "numflow": "workspace:*"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "@numflow-examples/05-error-handling",
+  "version": "1.0.0",
+  "description": "Numflow Error Handling & Retry",
+  "private": true,
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "numflow": "workspace:*"
+  }
+}

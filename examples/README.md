@@ -1,431 +1,273 @@
-# Numflow Framework - Examples Collection 📚
+# Numflow Examples
 
-A comprehensive collection of examples to learn the Numflow framework.
-
-> **Express Compatible, 3x Faster Performance, Feature-First Architecture** 🚀
-
-## 🎯 Learning Path
-
-New to Numflow? Follow this learning path:
-
-### 🌱 Beginner - 30 minutes
-
-Learn the basics of Numflow.
-
-1. **[01-getting-started](./01-getting-started/)** - From Hello World to JSON API
-   - `01-hello-world.js` - Simplest server
-   - `02-basic-routing.js` - Basic routing
-   - `03-json-api.js` - Building REST APIs
-
-### 🌿 Intermediate - 1 hour
-
-Learn commonly used patterns in real-world projects.
-
-2. **[02-routing](./02-routing/)** - High-performance routing patterns
-   - Dynamic parameters (`/users/:id`)
-   - Query strings (`?page=1&limit=10`)
-   - Route chaining
-
-3. **[03-middleware](./03-middleware/)** - Middleware system
-   - Basic middleware
-   - Multiple middleware chains
-   - Error middleware
-
-4. **[04-request-response](./04-request-response/)** - Advanced Request/Response
-   - Request properties (headers, query, params)
-   - Response methods (json, redirect, status)
-   - Body parsing (automatic!)
-
-### 🌲 Advanced - 2 hours
-
-Learn Numflow's powerful features.
-
-5. **[05-error-handling](./05-error-handling/)** - Unified error handling
-   - Custom error classes
-   - Global error handlers
-   - Feature error handling
-
-6. **[06-advanced](./06-advanced/)** - Advanced middleware
-   - CORS, Compression
-   - Static file serving
-   - Cookies, Sessions
-
-7. **[07-feature-first](./07-feature-first/)** ⭐ **Core Differentiator!**
-   - Feature-First architecture
-   - Automatic Step execution
-   - Error handling via onError
-   - Async tasks
-
-### 🏭 Real World - 3 hours
-
-Build real-world projects.
-
-8. **[08-real-world](./08-real-world/)** - Production projects
-   - Todo API (REST API pattern)
-   - Blog API (Auth, Authorization)
-   - E-commerce API (Feature-First)
-
-9. **[09-express-migration](./09-express-migration/)** - Express migration
-   - Express code → Numflow code
-   - Before/After comparison
-   - Migration checklist
-
-10. **[10-todo-app-ejs](./10-todo-app-ejs/)** ⭐ **Complete Full-Stack Example!**
-   - Bulk Registration (Convention over Configuration)
-   - EJS Template Engine (res.render())
-   - Feature-First pattern
-   - Beautiful UI/UX
-   - REST API (GET, POST, PUT, DELETE)
-
-11. **[11-javascript-jsdoc](./11-javascript-jsdoc/)** - JavaScript + JSDoc
-   - Type hints without TypeScript
-   - Using JSDoc comments
-   - VS Code IntelliSense
-
-12. **[12-llm-chat-api](./12-llm-chat-api/)** ⭐ **Retry & Fallback Pattern!**
-   - Real-world usage of `numflow.retry()`
-   - Multiple LLM Providers (OpenAI, OpenRouter, Gemini)
-   - Automatic Provider Fallback (on Rate Limit)
-   - Exponential Backoff Retry (on Timeout)
-   - Context-based state management
-
-## 📁 Directory Structure
-
-```
-examples/
-├── 01-getting-started/          ⭐ Start here!
-│   ├── 01-hello-world.js
-│   ├── 02-basic-routing.js
-│   └── 03-json-api.js
-│
-├── 02-routing/                  Routing patterns
-│   ├── 01-route-parameters.js
-│   ├── 02-query-strings.js
-│   ├── 03-multiple-parameters.js
-│   └── 04-route-chaining.js
-│
-├── 03-middleware/               Middleware system
-│   ├── 01-basic-middleware.js
-│   ├── 02-multiple-middleware.js
-│   ├── 03-feature-middleware.js
-│   └── 04-error-middleware.js
-│
-├── 04-request-response/         Request/Response
-│   ├── 01-request-properties.js
-│   ├── 02-response-methods.js
-│   ├── 03-body-parsing.js
-│   └── 04-content-negotiation.js
-│
-├── 05-error-handling/           Error handling
-│   ├── 01-basic-errors.js
-│   ├── 02-custom-errors.js
-│   ├── 03-global-error-handler.js
-│   └── 04-feature-error-handling.js
-│
-├── 06-advanced/                 Advanced middleware
-│   ├── 01-cors.js
-│   ├── 02-compression.js
-│   ├── 03-static-files.js
-│   ├── 04-cookies.js
-│   └── 05-sessions.js
-│
-├── 07-feature-first/            ⭐ Core feature!
-│   ├── 01-simple-feature.js
-│   ├── 02-transaction-feature.js (onError examples)
-│   ├── 03-async-tasks-feature.js
-│   └── 04-middleware-integration.js
-│
-├── 08-real-world/               Production projects
-│   └── todo-api/
-│
-├── 09-express-migration/        Express migration
-│   ├── 01-before-express.js
-│   └── 02-after-numbers.js
-│
-├── 10-todo-app-ejs/             ⭐ Full-Stack TODO app
-│   ├── app.js                   Bulk Registration!
-│   ├── features/                Convention over Configuration
-│   │   └── todos/
-│   │       ├── get/             GET /todos
-│   │       ├── post/            POST /todos
-│   │       └── [id]/
-│   │           ├── put/         PUT /todos/:id
-│   │           └── delete/      DELETE /todos/:id
-│   ├── views/
-│   │   └── index.ejs            EJS template
-│   └── public/
-│       └── style.css            Stylesheet
-│
-├── 11-javascript-jsdoc/         JavaScript + JSDoc
-│   └── app.js                   Type hint examples
-│
-├── 12-llm-chat-api/             ⭐ LLM + Retry/Fallback
-│   ├── app.js                   Chat API server
-│   ├── features/
-│   │   └── api/
-│   │       └── chat/
-│   │           └── post/        POST /api/chat
-│   │               ├── index.js         retry() logic!
-│   │               └── steps/
-│   │                   ├── 100-validate.js
-│   │                   ├── 200-prepare-messages.js
-│   │                   └── 300-call-llm.js
-│   └── test-api.sh              Test script
-```
-
-## 🚀 Quick Start
-
-### 1. Hello World (5 minutes)
-
-```bash
-# Run the simplest server
-node examples/01-getting-started/01-hello-world.js
-
-# Open http://localhost:3000 in your browser
-```
-
-### 2. JSON API (10 minutes)
-
-```bash
-# Run REST API server
-node examples/01-getting-started/03-json-api.js
-
-# Test
-curl http://localhost:3000/api/users
-curl -X POST http://localhost:3000/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"name":"John","email":"john@example.com"}'
-```
-
-### 3. Feature-First (30 minutes)
-
-```bash
-# Run Feature-First example
-node examples/07-feature-first/01-simple-feature.js
-
-# Test
-curl -X POST http://localhost:3000/api/greet \
-  -H "Content-Type: application/json" \
-  -d '{"name":"World"}'
-```
-
-## ⭐ Core Features of Numflow
-
-### 1. 100% Express Compatible
-
-```javascript
-// Express code works as-is!
-const numbers = require('numflow') // Instead of require('express')
-const app = numbers()
-
-app.get('/', (req, res) => {
-  res.json({ message: 'Hello' })
-})
-```
-
-### 2. 3x Faster Performance
-
-```
-Express:  14,124 req/s
-Numflow:  43,865 req/s  ← 211% improvement! 🚀
-```
-
-- Radix Tree router (find-my-way)
-- O(log n) lookup speed (Express is O(n))
-
-### 3. Feature-First Architecture ⭐
-
-**Traditional Approach**:
-```javascript
-// ❌ 149 lines of complex Orchestrator class
-class OrderOrchestrator {
-  async execute() {
-    await this.validateOrder()
-    await this.checkInventory()
-    // ... 10+ methods
-  }
-}
-```
-
-**Feature-First**:
-```javascript
-// ✅ 25 lines of declarative configuration
-module.exports = feature({
-  method: 'POST',
-  path: '/api/orders',
-  steps: './steps',           // 100-, 200-, 300-... auto-execute!
-  onError: async (error, context, req, res) => {
-    // Error handling and rollback logic
-    res.statusCode = 500
-    res.end(JSON.stringify({ error: error.message }))
-  },
-  asyncTasks: './async-tasks',
-})
-```
-
-**Benefits**:
-- 📁 Understand entire flow just by looking at file list
-- ➕ Add Steps by adding files (no code modification needed)
-- 🔄 Systematic error handling via onError
-- ⚡ Automatic async task scheduling
-
-## 📊 Examples by Difficulty
-
-### ⭐ Beginner
-
-| Example | Description | Time |
-|---------|-------------|------|
-| Hello World | Simplest server | 5min |
-| Basic Routing | GET, POST, PUT, DELETE | 10min |
-| JSON API | Building REST API | 15min |
-
-### ⭐⭐ Intermediate
-
-| Example | Description | Time |
-|---------|-------------|------|
-| Route Parameters | Dynamic routing | 10min |
-| Query Strings | Query string handling | 10min |
-| Middleware | Middleware chains | 20min |
-| Request/Response | Advanced Request/Response | 20min |
-
-### ⭐⭐⭐ Advanced
-
-| Example | Description | Time |
-|---------|-------------|------|
-| Error Handling | Unified error handling | 30min |
-| Feature-First | Auto-orchestration | 60min |
-| Real World | Production projects | 3hrs |
-
-## 🎓 Learning Tips
-
-### 1. Follow the sequence
-
-Learn in order: 01 → 02 → 03 → ... Your skills will improve naturally.
-
-### 2. Run the code yourself
-
-```bash
-# Run example
-node examples/01-getting-started/01-hello-world.js
-
-# Modify and run again
-# Learn by iteration!
-```
-
-### 3. Test with curl
-
-```bash
-# GET request
-curl http://localhost:3000/api/users
-
-# POST request
-curl -X POST http://localhost:3000/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"name":"John"}'
-
-# PUT/DELETE requests
-curl -X PUT http://localhost:3000/api/users/1 -d '{"name":"Jane"}'
-curl -X DELETE http://localhost:3000/api/users/1
-```
-
-### 4. Read with documentation
-
-Reading each example's README.md will deepen your understanding.
-
-## 🛠️ Development Environment Setup
-
-### Requirements
-
-- **Node.js**: 16.x or higher
-- **npm**: 7.x or higher
-
-### Build
-
-```bash
-# From project root
-npm install
-npm run build
-```
-
-### Running Examples
-
-```bash
-# Run individual example
-node examples/01-getting-started/01-hello-world.js
-
-# Run all examples in a directory
-node examples/02-routing/01-route-parameters.js
-node examples/02-routing/02-query-strings.js
-```
-
-## 📚 Additional Resources
-
-### Documentation
-
-- **[GETTING_STARTED.md](../docs/GETTING_STARTED.md)** - User guide
-- **[API.md](../docs/API.md)** - API reference
-- **[FEATURES.md](../docs/FEATURES.md)** - Feature details
-- **[PERFORMANCE.md](../docs/PERFORMANCE.md)** - Performance guide & Best Practices
-- **[ROADMAP.md](../docs/ROADMAP.md)** - Development roadmap
-
-## 🐛 Troubleshooting
-
-### Q: Port is already in use
-
-Another process is using port 3000.
-
-```bash
-# Check process using port
-lsof -i :3000        # macOS/Linux
-netstat -ano | findstr :3000  # Windows
-
-# Kill process or use different port
-```
-
-### Q: Cannot find module
-
-Build is required.
-
-```bash
-# From project root
-npm run build
-```
-
-### Q: Example doesn't run
-
-Check your Node.js version.
-
-```bash
-node --version  # Requires v16.x or higher
-```
-
-## 💡 Feedback
-
-For feedback or suggestions about examples:
-
-- **GitHub Issues**: https://github.com/gazerkr/numflow/issues
-- **Discussions**: https://github.com/gazerkr/numflow/discussions
-
-## 🏆 Next Steps
-
-### After completing all examples
-
-1. **Build a real project**
-   - Todo API
-   - Blog API
-   - E-commerce API
-
-2. **Migrate an Express project**
-   - See [09-express-migration](./09-express-migration/)
-
-3. **Contribute to open source**
-   - Add new examples
-   - Improve documentation
-   - Report bugs
+**The fastest way to learn Numflow!**
 
 ---
 
-**Last Updated**: 2025-10-20 (Added 12-llm-chat-api - Retry/Fallback pattern examples)
-**Previous Update**: 2025-10-16 (Added 10-todo-app-ejs - Full-Stack example)
+## 📁 Folder Structure
 
-**Ready to start?** → [01-getting-started](./01-getting-started/) 🚀
+Examples are organized by module system:
+
+```
+examples/
+├── cjs/                    # CommonJS (require/module.exports)
+│   ├── 01-hello-world/
+│   ├── 02-convention-first/
+│   ├── 03-step-system/
+│   ├── 04-async-tasks/
+│   ├── 05-error-handling/
+│   └── realworld/
+│       ├── todo-app/       # REST API only
+│       └── todo-app-ejs/   # Full-stack with EJS
+│
+└── esm/                    # ES Modules (import/export)
+    ├── 01-hello-world/
+    ├── 02-convention-first/
+    ├── 03-step-system/
+    ├── 04-async-tasks/
+    ├── 05-error-handling/
+    └── realworld/
+        ├── todo-app/       # REST API only
+        └── todo-app-ejs/   # Full-stack with EJS
+```
+
+**Choose your style:**
+- **CJS**: Traditional Node.js style (`require()`)
+- **ESM**: Modern JavaScript style (`import`)
+
+---
+
+## 🎯 Learning Path
+
+Learn Numflow's core concepts step by step.
+
+### 1️⃣ Hello World - 3 min
+
+Start with the simplest server
+
+**CJS:**
+```javascript
+const numflow = require('numflow')
+const app = numflow()
+app.get('/', (req, res) => res.send('Hello!'))
+app.listen(3000)
+```
+
+**ESM:**
+```javascript
+import numflow from 'numflow'
+const app = numflow()
+app.get('/', (req, res) => res.send('Hello!'))
+app.listen(3000)
+```
+
+**What you'll learn**: Express-compatible API
+
+---
+
+### 2️⃣ Convention First ⭐ - 10 min
+
+**Numflow's core!** Folder structure becomes your API.
+
+```
+features/users/@get/      → GET /users
+features/users/@post/     → POST /users
+features/users/[id]/@get/ → GET /users/:id
+```
+
+**What you'll learn**: Convention over Configuration, automatic path inference
+
+**💡 This is Numflow's most important differentiator!**
+
+---
+
+### 3️⃣ Step System - 15 min
+
+Break complex logic into small steps
+
+```
+100-validate.js  → Validation
+200-create.js    → Creation
+300-respond.js   → Response
+```
+
+**What you'll learn**: Sequential step execution, Context sharing, early return
+
+---
+
+### 4️⃣ Async Tasks - 10 min
+
+Background tasks after response
+
+```
+Steps complete → Send response (client receives immediately)
+                 ↓
+            AsyncTask runs (background)
+```
+
+**What you'll learn**: Non-blocking background tasks, eliminate response delays
+
+---
+
+### 5️⃣ Error Handling - 10 min
+
+Error handling and automatic retry
+
+```
+Step error → Feature.onError → Retry or Global Handler
+```
+
+**What you'll learn**: 3-tier error handling, Retry mechanism
+
+---
+
+### 🌍 Realworld TODO App - 30 min
+
+Complete TODO API and Full-stack implementations
+
+#### todo-app (REST API)
+```
+GET    /todos      - List all
+POST   /todos      - Create
+DELETE /todos/:id  - Delete
+```
+
+#### todo-app-ejs (Full-stack with EJS)
+```
+GET    /           - Render TODO list page (EJS)
+POST   /todos      - Create TODO
+PUT    /todos/:id  - Toggle completion
+DELETE /todos/:id  - Delete TODO
+```
+
+**What you'll learn**: All concepts integrated, production-ready project structure, EJS template rendering
+
+---
+
+## 📚 CJS vs ESM Comparison
+
+| Aspect | CJS | ESM |
+|--------|-----|-----|
+| Import | `const numflow = require('numflow')` | `import numflow from 'numflow'` |
+| Export | `module.exports = ...` | `export default ...` |
+| package.json | Default | `"type": "module"` |
+| File extension | `.js` | `.js` or `.mjs` |
+| Step export | `module.exports = async (ctx, req, res) => {}` | `export default async (ctx, req, res) => {}` |
+
+---
+
+## 🚀 Quick Start
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/seunghyunpaek/numflow.git
+cd numflow
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Run an example
+
+**CJS:**
+```bash
+cd examples/cjs/01-hello-world
+npm install
+npm start
+```
+
+**ESM:**
+```bash
+cd examples/esm/01-hello-world
+npm install
+npm start
+```
+
+---
+
+## 💡 Core Message of Each Example
+
+| Example | Core Message | Importance |
+|---------|--------------|------------|
+| 01-hello-world | "Start just like Express" | ⭐⭐ |
+| 02-convention-first | **"Folders become APIs"** | ⭐⭐⭐⭐⭐ |
+| 03-step-system | "Break logic into small steps" | ⭐⭐⭐⭐ |
+| 04-async-tasks | "Background processing after response" | ⭐⭐⭐ |
+| 05-error-handling | "Auto-retry and error handling" | ⭐⭐⭐ |
+| realworld/todo-app | "Production-ready REST API" | ⭐⭐⭐⭐ |
+| realworld/todo-app-ejs | "Full-stack with EJS template" | ⭐⭐⭐⭐ |
+
+---
+
+## 📚 Recommended Learning Paths
+
+### For Beginners
+
+```
+01 → 02 ⭐ → realworld
+```
+
+At minimum, check out **02-convention-first**! This is Numflow's core.
+
+### For Deep Learning
+
+```
+01 → 02 ⭐ → 03 → 04 → 05 → realworld
+```
+
+Complete all examples in order to master every Numflow concept.
+
+---
+
+## ❓ FAQ
+
+### Q1. Should I use CJS or ESM?
+
+**A**:
+- **CJS**: If your existing project uses `require()`
+- **ESM**: For new projects or if you prefer modern JavaScript
+
+Both work identically with Numflow!
+
+### Q2. How is it different from Express?
+
+**A**: Numflow maintains Express compatibility while adding:
+- ✅ **Convention over Configuration**: Auto-generate APIs from folder structure
+- ✅ **Step System**: Break complex logic into small steps
+- ✅ **AsyncTask**: Auto-schedule background tasks
+
+### Q3. Which example should I start with?
+
+**A**: At minimum, check out **01-hello-world** and **02-convention-first**. Example 02 is Numflow's core!
+
+### Q4. Does it support TypeScript?
+
+**A**: Yes! Numflow supports both JavaScript and TypeScript. However, examples prioritize JavaScript.
+
+---
+
+## 🔗 Additional Resources
+
+- [📖 Official Documentation](../docs/)
+- [🎯 API Reference](../docs/api/)
+- [🏗️ Architecture](../docs/ARCHITECTURE.md)
+- [🐛 GitHub Issues](https://github.com/seunghyunpaek/numflow/issues)
+
+---
+
+## 🎉 Next Steps
+
+Completed all examples? Congratulations!
+
+Now try:
+
+1. ✅ Build your own API
+2. ✅ Connect to a real database (PostgreSQL, MongoDB)
+3. ✅ Add authentication/authorization
+4. ✅ Deploy (Vercel, AWS, Docker)
+
+**Happy Coding with Numflow!** 🚀

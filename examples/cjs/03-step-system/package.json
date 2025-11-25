@@ -1,0 +1,17 @@
+{
+  "name": "@numflow-examples/03-step-system",
+  "version": "1.0.0",
+  "description": "Numflow Step System - Break complex logic into small steps",
+  "private": true,
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "numflow": "workspace:*"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

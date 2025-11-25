@@ -1,0 +1,24 @@
+{
+  "name": "@numflow-examples/02-convention-first-esm",
+  "version": "1.0.0",
+  "description": "Numflow Convention over Configuration - ESM version",
+  "private": true,
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "keywords": [
+    "numflow",
+    "convention",
+    "feature-first",
+    "esm"
+  ],
+  "dependencies": {
+    "numflow": "workspace:*"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

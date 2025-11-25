@@ -1,0 +1,26 @@
+{
+  "name": "@numflow-examples/todo-app-ejs-esm",
+  "version": "1.0.0",
+  "description": "Full-stack TODO App with EJS Template - ESM version",
+  "private": true,
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "imports": {
+    "#db": "./db.js",
+    "#db/*": "./db/*.js"
+  },
+  "keywords": [
+    "numflow",
+    "todo-app",
+    "ejs",
+    "feature-first",
+    "esm"
+  ],
+  "dependencies": {
+    "ejs": "^3.1.9",
+    "numflow": "workspace:*"
+  }
+}

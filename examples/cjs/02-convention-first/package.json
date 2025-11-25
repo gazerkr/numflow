@@ -1,0 +1,29 @@
+{
+  "name": "@numflow-examples/02-convention-first",
+  "version": "1.0.0",
+  "description": "Numflow Convention over Configuration - Folder structure becomes your API",
+  "private": true,
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [
+    "numflow",
+    "convention",
+    "feature-first"
+  ],
+  "dependencies": {
+    "numflow": "workspace:*"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ]
+  }
+}

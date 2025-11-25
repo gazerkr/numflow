@@ -1,0 +1,16 @@
+/**
+ * PUT /todos/:id - Toggle TODO complete/incomplete
+ *
+ * Convention over Configuration:
+ * - HTTP Method: folder name '@put' -> PUT
+ * - Path: folder structure -> /todos/:id ([id] -> :id)
+ * - Steps: ./steps directory auto-detected
+ */
+
+const numflow = require('numflow')
+
+module.exports = numflow.feature({
+  contextInitializer: (ctx, req, res) => {
+    ctx.todoId = req.params.id
+  }
+})

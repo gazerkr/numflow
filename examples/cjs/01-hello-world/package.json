@@ -1,0 +1,29 @@
+{
+  "name": "@numflow-examples/01-hello-world",
+  "version": "1.0.0",
+  "description": "Numflow Hello World - The simplest start",
+  "private": true,
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [
+    "numflow",
+    "example",
+    "hello-world"
+  ],
+  "dependencies": {
+    "numflow": "workspace:*"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ]
+  }
+}

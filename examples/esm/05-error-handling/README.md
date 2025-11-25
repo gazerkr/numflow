@@ -1,0 +1,52 @@
+# 05-error-handling (ESM)
+
+Numflow Error Handling & Retry - ES Modules version
+
+## Error Handling Layers
+
+```
+Error occurs in Step
+        ↓
+Feature.onError() → Can retry or handle
+        ↓
+Global app.onError() → Final fallback
+```
+
+## Retry Mechanism
+
+```javascript
+// In Feature onError
+onError: async (error, ctx, req, res) => {
+  if (error.message === 'NETWORK_ERROR') {
+    return numflow.retry({
+      maxAttempts: 3,
+      delay: 1000
+    })
+  }
+}
+```
+
+## Quick Start
+
+```bash
+npm install
+npm start
+```
+
+## Test
+
+```bash
+# Try multiple times - 70% fail rate with auto-retry
+curl -X POST http://localhost:3000/payments \
+  -H "Content-Type: application/json" \
+  -d '{"amount": 10000}'
+
+# Watch console for retry logs
+```
+
+## Key Points
+
+- Feature `onError` handles feature-specific errors
+- Return `numflow.retry()` to automatically retry
+- Global `app.onError()` catches unhandled errors
+- `res.headersSent` check prevents double response

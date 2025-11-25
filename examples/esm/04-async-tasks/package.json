@@ -1,0 +1,19 @@
+{
+  "name": "@numflow-examples/04-async-tasks-esm",
+  "version": "1.0.0",
+  "description": "Numflow AsyncTask - ESM version",
+  "private": true,
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "keywords": [
+    "numflow",
+    "async-tasks",
+    "esm"
+  ],
+  "dependencies": {
+    "numflow": "workspace:*"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@numflow-examples/03-step-system-esm",
+  "version": "1.0.0",
+  "description": "Numflow Step System - ESM version",
+  "private": true,
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "keywords": [
+    "numflow",
+    "step-system",
+    "esm"
+  ],
+  "dependencies": {
+    "numflow": "workspace:*"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
