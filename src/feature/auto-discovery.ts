@@ -13,6 +13,7 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
+import { resolveModuleType } from '../utils/package-type-resolver.js'
 import { StepInfo, AsyncTaskInfo, AutoDiscoveryOptions, StepFunction, AsyncTaskFunction } from './types.js'
 
 /**
@@ -169,15 +170,18 @@ export class AutoDiscovery {
    */
   private async loadStepFunction(filePath: string): Promise<StepFunction> {
     try {
-      // Use dynamic import (ESM support)
-      // For .mjs and .mts files, use Function constructor to force true dynamic import
-      // This prevents TypeScript from converting it to require() in CommonJS build
-      const isESM = filePath.endsWith('.mjs') || filePath.endsWith('.mts')
+      // Use dynamic import for both CommonJS and ESM support
+      // Detect module type based on file extension AND package.json "type" field
+      const moduleType = resolveModuleType(filePath)
+      const isESM = moduleType === 'esm'
+
+      // For ESM files, use Function constructor to force true dynamic import
+      // This prevents TypeScript from converting import() to require() in CommonJS build
       const module = isESM
         ? await (new Function('p', 'return import(p)'))(filePath)
         : await import(filePath)
 
-      // Check default export or module.exports
+      // Check default export (ESM) or module.exports (CommonJS)
       const fn = module.default || module
 
       if (typeof fn !== 'function') {
@@ -200,15 +204,18 @@ export class AutoDiscovery {
    */
   private async loadAsyncTaskFunction(filePath: string): Promise<AsyncTaskFunction> {
     try {
-      // Use dynamic import (ESM support)
-      // For .mjs and .mts files, use Function constructor to force true dynamic import
-      // This prevents TypeScript from converting it to require() in CommonJS build
-      const isESM = filePath.endsWith('.mjs') || filePath.endsWith('.mts')
+      // Use dynamic import for both CommonJS and ESM support
+      // Detect module type based on file extension AND package.json "type" field
+      const moduleType = resolveModuleType(filePath)
+      const isESM = moduleType === 'esm'
+
+      // For ESM files, use Function constructor to force true dynamic import
+      // This prevents TypeScript from converting import() to require() in CommonJS build
       const module = isESM
         ? await (new Function('p', 'return import(p)'))(filePath)
         : await import(filePath)
 
-      // Check default export or module.exports
+      // Check default export (ESM) or module.exports (CommonJS)
       const fn = module.default || module
 
       if (typeof fn !== 'function') {

@@ -509,23 +509,24 @@ Response (error response)
 
 ### Automatic Error Type Detection
 
+Numflow uses **duck typing** for error type detection to ensure compatibility across different module instances (e.g., when using `file:../../` or monorepo setups).
+
 ```typescript
+import { isHttpError, isOperationalError } from 'numflow'
+
 class ErrorHandler {
   handle(err: Error, req: Request, res: Response) {
-    if (err instanceof ValidationError) {
-      return res.status(400).json({ error: err.message })
-    }
-    if (err instanceof NotFoundError) {
-      return res.status(404).json({ error: 'Not found' })
-    }
-    if (err instanceof UnauthorizedError) {
-      return res.status(401).json({ error: 'Unauthorized' })
+    // Use isHttpError() for duck typing - works across module instances
+    if (isHttpError(err)) {
+      return res.status(err.statusCode).json({ error: err.message })
     }
     // Default 500 error
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
 ```
+
+> **Note**: Avoid using `instanceof` checks directly (e.g., `err instanceof ValidationError`) as they may fail when different module instances exist. Always use `isHttpError()` and `isOperationalError()` utility functions for maximum compatibility.
 
 ---
 

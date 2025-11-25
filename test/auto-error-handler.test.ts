@@ -1,11 +1,13 @@
 /**
  * Auto-Error Handler Test
-
  */
 
 import { ServerResponse } from 'http'
 import { AutoErrorHandler } from '../src/feature/auto-error-handler'
-import { FeatureError, ValidationError, StepInfo } from '../src/feature/types'
+import { FeatureError, FeatureValidationError, StepInfo } from '../src/feature/types'
+
+// Use FeatureValidationError as ValidationError for backward compatibility tests
+const ValidationError = FeatureValidationError
 
 describe('Auto-Error Handler', () => {
   let mockRes: ServerResponse

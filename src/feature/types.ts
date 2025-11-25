@@ -503,12 +503,21 @@ export class FeatureError extends Error {
 }
 
 /**
- * Validation Error
- * Error that occurs when data validation fails
+ * @deprecated Use ValidationError from 'numflow' errors instead.
+ * This class is kept for backward compatibility but will be removed in a future version.
+ *
+ * Validation Error (Feature-specific, deprecated)
+ * Use `import { ValidationError } from 'numflow'` for consistent error handling.
  */
-export class ValidationError extends FeatureError {
+export class FeatureValidationError extends FeatureError {
   constructor(message: string, context?: Context) {
     super(message, undefined, undefined, context, 400)
     this.name = 'ValidationError'
   }
 }
+
+/**
+ * @deprecated Use `import { ValidationError } from 'numflow'` instead.
+ * This alias is kept for backward compatibility.
+ */
+export const ValidationError = FeatureValidationError

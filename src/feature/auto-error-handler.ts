@@ -7,10 +7,59 @@
  * 1. Error catching: Catches all errors that occur during Step execution
  * 2. HTTP response: Converts errors to appropriate HTTP responses
  * 3. Error logging: Logs error information
+ *
+ * Uses duck typing for consistent error handling across different module instances
+ * (ESM/CommonJS compatibility).
  */
 
 import { ServerResponse } from 'http'
-import { FeatureError, ValidationError } from './types.js'
+import { FeatureError, FeatureValidationError } from './types.js'
+import { hasStatusCode } from '../utils/type-guards.js'
+
+/**
+ * Type for duck-typed FeatureError
+ * Used for cross-module compatibility (ESM/CJS)
+ */
+interface DuckTypedFeatureError extends Error {
+  statusCode: number
+  step?: { number: number; name: string }
+}
+
+/**
+ * Check if error is FeatureError (or duck-typed FeatureError)
+ *
+ * Supports errors from different module instances (ESM/CJS).
+ * Note: Excludes ValidationError (which extends FeatureError but has different name)
+ */
+function isFeatureError(error: Error): error is DuckTypedFeatureError {
+  // Check actual FeatureError instance (but not ValidationError subclass)
+  if (error instanceof FeatureError && error.name === 'FeatureError') {
+    return true
+  }
+  // Duck typing fallback for cross-module compatibility
+  return error.name === 'FeatureError' && hasStatusCode(error)
+}
+
+/**
+ * Type for duck-typed ValidationError
+ * Used for cross-module compatibility (ESM/CJS)
+ */
+interface DuckTypedValidationError extends Error {
+  statusCode: number
+}
+
+/**
+ * Check if error is ValidationError (or duck-typed ValidationError)
+ *
+ * Supports errors from different module instances (ESM/CJS).
+ */
+function isValidationError(error: Error): error is DuckTypedValidationError {
+  if (error instanceof FeatureValidationError) {
+    return true
+  }
+  // Duck typing fallback for cross-module compatibility
+  return error.name === 'ValidationError' && hasStatusCode(error)
+}
 
 /**
  * Auto-Error Handler class
@@ -33,6 +82,8 @@ export class AutoErrorHandler {
   /**
    * Send HTTP error response
    *
+   * Uses duck typing (hasStatusCode) to support errors from different module instances.
+   *
    * @param error - Error that occurred
    * @param res - HTTP Response object
    */
@@ -42,8 +93,8 @@ export class AutoErrorHandler {
     let errorMessage = 'An unexpected error occurred'
     let details: any = {}
 
-    // Handle FeatureError
-    if (error instanceof FeatureError) {
+    // Handle FeatureError (including duck-typed errors from different module instances)
+    if (isFeatureError(error)) {
       statusCode = error.statusCode
       errorName = error.name
       errorMessage = error.message
@@ -55,11 +106,17 @@ export class AutoErrorHandler {
         }
       }
     }
-    // Handle ValidationError
-    else if (error instanceof ValidationError) {
-      statusCode = 400
-      errorName = 'ValidationError'
+    // Handle ValidationError (including duck-typed errors from different module instances)
+    else if (isValidationError(error)) {
+      statusCode = error.statusCode
+      errorName = error.name
       errorMessage = error.message
+    }
+    // Handle any error with statusCode (duck typing for HttpError and external errors)
+    else if (hasStatusCode(error)) {
+      statusCode = error.statusCode
+      errorName = error.name || 'Error'
+      errorMessage = error.message || 'An unexpected error occurred'
     }
     // Handle generic Error
     else {
@@ -98,7 +155,7 @@ export class AutoErrorHandler {
     console.error(`  Name: ${error.name}`)
     console.error(`  Message: ${error.message}`)
 
-    if (error instanceof FeatureError && error.step) {
+    if (isFeatureError(error) && error.step) {
       console.error(`  Step: ${error.step.number} (${error.step.name})`)
     }
 

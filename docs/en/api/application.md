@@ -748,26 +748,26 @@ app.onError((err, req, res) => {
 **Error Type Handling:**
 ```javascript
 const numflow = require('numflow')
-const { ValidationError, NotFoundError } = numflow
+const { isHttpError } = numflow
 const app = numflow()
 
 app.onError((err, req, res) => {
   console.error(err)
 
-  if (err instanceof ValidationError) {
-    return res.status(400).json({
+  // Use isHttpError() for duck typing - works across module instances
+  if (isHttpError(err)) {
+    return res.status(err.statusCode).json({
       error: err.message,
-      validationErrors: err.validationErrors
+      ...(err.validationErrors && { validationErrors: err.validationErrors }),
+      ...(err.code && { code: err.code })
     })
-  }
-
-  if (err instanceof NotFoundError) {
-    return res.status(404).json({ error: err.message })
   }
 
   res.status(500).json({ error: 'Internal Server Error' })
 })
 ```
+
+> **Note**: Use `isHttpError()` instead of `instanceof` checks for maximum compatibility across different module instances. See [Error Handling](../getting-started/error-handling.md#error-utilities) for details.
 
 **Environment-Specific Handling:**
 ```javascript

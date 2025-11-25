@@ -5,6 +5,8 @@
  * Error type definitions for regular routes and Feature-First
  */
 
+import { hasStatusCode } from '../utils/type-guards.js'
+
 /**
  * HTTP error base class
  */
@@ -181,25 +183,62 @@ export class ServiceUnavailableError extends HttpError {
 
 /**
  * Check if error is HttpError
+ *
+ * Uses duck typing to support errors from different module instances.
+ * An error is considered HttpError-like if it:
+ * 1. Is an instance of Error
+ * 2. Has a numeric statusCode property
+ * 3. Has an isOperational property (optional but preferred)
+ *
+ * @param error - Error to check
+ * @returns true if error is HttpError or HttpError-like
  */
 export function isHttpError(error: unknown): error is HttpError {
-  return error instanceof HttpError
+  // First check instanceof for same module instance
+  if (error instanceof HttpError) {
+    return true
+  }
+
+  // Duck typing for different module instances
+  // Must be an Error instance with statusCode property
+  if (error instanceof Error && hasStatusCode(error)) {
+    return true
+  }
+
+  return false
 }
 
 /**
  * Check if error is Operational Error (expected error)
+ *
+ * Uses duck typing to support errors from different module instances.
+ *
+ * @param error - Error to check
+ * @returns true if error is operational (expected error)
  */
 export function isOperationalError(error: unknown): boolean {
+  // First check instanceof for same module instance
   if (error instanceof HttpError) {
     return error.isOperational
   }
+
+  // Duck typing for different module instances
+  if (error instanceof Error && hasStatusCode(error)) {
+    // Check for isOperational property
+    const errorWithOp = error as Error & { isOperational?: boolean }
+    return errorWithOp.isOperational === true
+  }
+
   return false
 }
 
 /**
  * Feature execution error
  *
- * Wraps errors that occurred during Feature Step execution to provide additional information
+ * Wraps errors that occurred during Feature Step execution to provide additional information.
+ *
+ * Uses duck typing (hasStatusCode) instead of instanceof to support errors
+ * from different module instances (e.g., when using file:../../ or workspace:* references).
  */
 export class FeatureExecutionError extends HttpError {
   public readonly originalError: Error
@@ -209,8 +248,9 @@ export class FeatureExecutionError extends HttpError {
   }
 
   constructor(originalError: Error, step?: { number: number; name: string }) {
-    // Keep status code if original error is HttpError, otherwise 500
-    const statusCode = originalError instanceof HttpError ? originalError.statusCode : 500
+    // Use duck typing to preserve statusCode from any error with statusCode property
+    // This fixes the bug where instanceof HttpError fails with different module instances
+    const statusCode = hasStatusCode(originalError) ? originalError.statusCode : 500
 
     const suggestion = step
       ? `Error occurred in step ${step.number} (${step.name}). Check the step implementation and ensure all dependencies are available.`

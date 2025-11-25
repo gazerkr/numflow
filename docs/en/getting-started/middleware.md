@@ -222,19 +222,18 @@ Numflow provides `app.onError()` for global error handling:
 
 ```javascript
 const numflow = require('numflow')
-const { ValidationError, NotFoundError } = numflow
+const { isHttpError } = numflow
 const app = numflow()
 
 app.onError((err, req, res) => {
   console.error(err)
 
-  // Handle specific error types
-  if (err instanceof ValidationError) {
-    return res.status(400).json({ error: err.message })
-  }
-
-  if (err instanceof NotFoundError) {
-    return res.status(404).json({ error: err.message })
+  // Use isHttpError() for duck typing - works across module instances
+  if (isHttpError(err)) {
+    return res.status(err.statusCode).json({
+      error: err.message,
+      ...(err.validationErrors && { validationErrors: err.validationErrors })
+    })
   }
 
   // Default error response

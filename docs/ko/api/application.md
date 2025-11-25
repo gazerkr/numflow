@@ -377,30 +377,18 @@ app.route('/users/:id')
 **JavaScript (CommonJS):**
 ```javascript
 const numflow = require('numflow')
-const { ValidationError, NotFoundError, BusinessError } = numflow
+const { isHttpError } = numflow
 const app = numflow()
 
 app.onError((err, req, res) => {
   console.error(err)
 
-  // ValidationError 처리
-  if (err instanceof ValidationError) {
-    return res.status(400).json({
+  // duck typing을 위해 isHttpError() 사용 - 모듈 인스턴스 간에도 동작
+  if (isHttpError(err)) {
+    return res.status(err.statusCode).json({
       error: err.message,
-      validationErrors: err.validationErrors
-    })
-  }
-
-  // NotFoundError 처리
-  if (err instanceof NotFoundError) {
-    return res.status(404).json({ error: err.message })
-  }
-
-  // BusinessError 처리
-  if (err instanceof BusinessError) {
-    return res.status(400).json({
-      error: err.message,
-      code: err.code
+      ...(err.validationErrors && { validationErrors: err.validationErrors }),
+      ...(err.code && { code: err.code })
     })
   }
 
@@ -411,33 +399,19 @@ app.onError((err, req, res) => {
 
 **TypeScript:**
 ```typescript
-import numflow, {
-  ValidationError,
-  NotFoundError,
-  BusinessError,
-  ErrorHandler
-} from 'numflow'
+import numflow, { isHttpError, ErrorHandler } from 'numflow'
 
 const app = numflow()
 
 const errorHandler: ErrorHandler = (err, req, res) => {
   console.error(err)
 
-  if (err instanceof ValidationError) {
-    return res.status(400).json({
+  // duck typing을 위해 isHttpError() 사용 - 모듈 인스턴스 간에도 동작
+  if (isHttpError(err)) {
+    return res.status(err.statusCode).json({
       error: err.message,
-      validationErrors: err.validationErrors
-    })
-  }
-
-  if (err instanceof NotFoundError) {
-    return res.status(404).json({ error: err.message })
-  }
-
-  if (err instanceof BusinessError) {
-    return res.status(400).json({
-      error: err.message,
-      code: err.code
+      ...(err.validationErrors && { validationErrors: err.validationErrors }),
+      ...(err.code && { code: err.code })
     })
   }
 
@@ -446,6 +420,8 @@ const errorHandler: ErrorHandler = (err, req, res) => {
 
 app.onError(errorHandler)
 ```
+
+> **참고**: 서로 다른 모듈 인스턴스 간 최대 호환성을 위해 `instanceof` 대신 `isHttpError()`를 사용하세요. 자세한 내용은 [에러 처리](../getting-started/error-handling.md#에러-유틸리티)를 참조하세요.
 
 **개발/프로덕션 환경 분기:**
 ```javascript

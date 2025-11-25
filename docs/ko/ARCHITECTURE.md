@@ -955,23 +955,24 @@ Response (에러 응답)
 
 ### 에러 타입 자동 감지
 
+Numflow는 서로 다른 모듈 인스턴스 간 호환성을 보장하기 위해 **duck typing**을 사용합니다 (예: `file:../../` 또는 모노레포 설정 사용 시).
+
 ```typescript
+import { isHttpError, isOperationalError } from 'numflow'
+
 class ErrorHandler {
   handle(err: Error, req: Request, res: Response) {
-    if (err instanceof ValidationError) {
-      return res.status(400).json({ error: err.message })
-    }
-    if (err instanceof NotFoundError) {
-      return res.status(404).json({ error: 'Not found' })
-    }
-    if (err instanceof UnauthorizedError) {
-      return res.status(401).json({ error: 'Unauthorized' })
+    // duck typing을 위해 isHttpError() 사용 - 모듈 인스턴스 간에도 동작
+    if (isHttpError(err)) {
+      return res.status(err.statusCode).json({ error: err.message })
     }
     // 기본 500 에러
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
 ```
+
+> **참고**: `instanceof` 직접 체크(예: `err instanceof ValidationError`)는 서로 다른 모듈 인스턴스가 존재할 때 실패할 수 있으므로 피하세요. 최대 호환성을 위해 항상 `isHttpError()`와 `isOperationalError()` 유틸리티 함수를 사용하세요.
 
 ## TypeScript 타입 시스템
 
